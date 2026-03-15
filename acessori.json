@@ -1,0 +1,42 @@
+[
+    {
+    "MODELLO_STRUTTURA": "ZAVORRA STANDARD 1600",
+    "POSTI AUTO": 1,
+    "KG": 1600,
+    "bilico_13mt": 15,
+    "camion_gru": 10,
+    "nostro_mezzo": 0
+},
+{
+    "MODELLO_STRUTTURA": "ZAVORRA STANDARD TWEN DRIVE 2800",
+    "POSTI AUTO": 1,
+    "KG": 2800,
+    "bilico_13mt": 10,
+    "camion_gru": 5,
+    "nostro_mezzo": 0
+},
+{
+    "MODELLO_STRUTTURA": "ZAVORRA STANDARD 1000",
+    "POSTI AUTO": 1,
+    "KG": 1000,
+    "bilico_13mt": 24,
+    "camion_gru": 19,
+    "nostro_mezzo": 1
+},
+{
+    "MODELLO_STRUTTURA": "ZAVORRA ACCIAIO STANDARD",
+    "POSTI AUTO": 1,
+    "KG": 250,
+    "bilico_13mt": 96,
+    "camion_gru": 91,
+    "nostro_mezzo": 5
+},
+{
+    "MODELLO_STRUTTURA": "ZAVORRA ACCIAIO EXPO",
+    "POSTI AUTO": 1,
+    "KG": 100,
+    "bilico_13mt": 240,
+    "camion_gru": 235,
+    "nostro_mezzo": 10
+}
+]
