@@ -28,9 +28,22 @@ body {
 }
 
 .app {
-  max-width: 640px;
+  max-width: 1200px;
   margin: 0 auto;
   padding: 1.5rem;
+}
+
+.main-wrap {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+@media (min-width: 900px) {
+  .main-wrap {
+    grid-template-columns: 1fr 320px;
+  }
 }
 
 .header {
@@ -232,6 +245,73 @@ body {
   margin-top: 0.25rem;
   font-size: 0.8rem;
   color: var(--secondary);
+}
+
+.panel-parametri {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 1.25rem;
+  position: sticky;
+  top: 1rem;
+}
+
+.panel-parametri-titolo {
+  margin: 0 0 0.35rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.panel-parametri-intro {
+  margin: 0 0 1rem;
+  font-size: 0.8rem;
+  color: var(--secondary);
+  line-height: 1.4;
+}
+
+.parametri-group {
+  margin-bottom: 1rem;
+}
+
+.parametri-group:last-child {
+  margin-bottom: 0;
+}
+
+.parametri-group-titolo {
+  margin: 0 0 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.parametri-hint {
+  margin: 0 0 0.5rem;
+  font-size: 0.8rem;
+  color: var(--secondary);
+}
+
+.panel-parametri .domanda {
+  margin-bottom: 0.5rem;
+}
+
+.panel-parametri .domanda:last-child {
+  margin-bottom: 0;
+}
+
+.panel-parametri input {
+  width: 100%;
+  padding: 0.4rem 0.6rem;
+  font: inherit;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #fff;
+}
+
+.panel-parametri input:focus {
+  outline: none;
+  border-color: var(--primary);
 }
 
 .form-footer {

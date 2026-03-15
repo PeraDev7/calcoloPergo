@@ -11,6 +11,18 @@
     gru: [],
     valori: {},
     distanzaKm: null,
+    /** Parametri e costi modificabili in sessione (default da JSON/hardcoded, non si salvano sui file) */
+    parametri: {
+      lat_partenza: null,
+      lon_partenza: null,
+      muletto_settimana: 800,
+      muletto_mese: 1200,
+      muletto_2mesi: 2300,
+      scala_primo_giorno: 600,
+      scala_giorno_extra: 100,
+      costo_km_trasporto: null,
+      costo_km_gru: null,
+    },
   };
   let checkSubmitFn = () => {};
 
@@ -41,8 +53,79 @@
   }
 
   function getCoordinatePartenza() {
+    const lat = getParametro('lat_partenza') ?? state.costanti?.coordinate_partenza?.lat;
+    const lon = getParametro('lon_partenza') ?? state.costanti?.coordinate_partenza?.lon;
+    if (typeof lat === 'number' && typeof lon === 'number' && !Number.isNaN(lat) && !Number.isNaN(lon)) return { lat, lon };
     const c = state.costanti?.coordinate_partenza;
     return c && typeof c.lat === 'number' && typeof c.lon === 'number' ? c : null;
+  }
+
+  function getParametro(name) {
+    const v = state.parametri[name];
+    return v != null && v !== '' ? Number(v) : null;
+  }
+
+  function setParametro(name, value) {
+    state.parametri[name] = value;
+    const el = $(`[data-param="${name}"]`);
+    if (el && el.tagName === 'INPUT') el.value = value != null && value !== '' ? String(value) : '';
+  }
+
+  /** Inizializza state.parametri con default da costanti/JSON */
+  function initParametriFromDefaults() {
+    const cp = state.costanti?.coordinate_partenza;
+    state.parametri.lat_partenza = cp?.lat != null ? cp.lat : null;
+    state.parametri.lon_partenza = cp?.lon != null ? cp.lon : null;
+    state.parametri.muletto_settimana = 800;
+    state.parametri.muletto_mese = 1200;
+    state.parametri.muletto_2mesi = 2300;
+    state.parametri.scala_primo_giorno = 600;
+    state.parametri.scala_giorno_extra = 100;
+    const firstTrasporti = state.trasporti?.length && state.trasporti[0];
+    const firstGru = state.gru?.length && state.gru[0];
+    state.parametri.costo_km_trasporto = firstTrasporti?.COSTO_KM != null ? firstTrasporti.COSTO_KM : null;
+    state.parametri.costo_km_gru = firstGru?.COSTO_KM != null ? firstGru.COSTO_KM : null;
+  }
+
+  /** Aggiorna costo_km_trasporto e costo_km_gru dalla fascia corrispondente alla distanza (da JSON) */
+  function aggiornaParametriDaDistanza() {
+    const km = state.distanzaKm;
+    if (km == null) return;
+    const sortedTrasporti = state.trasporti?.length ? [...state.trasporti].sort((a, b) => (a.DISTANZA || 0) - (b.DISTANZA || 0)) : [];
+    const rowTrasporti = sortedTrasporti.find((r) => (r.DISTANZA || 0) >= km) || sortedTrasporti[sortedTrasporti.length - 1];
+    if (rowTrasporti?.COSTO_KM != null) setParametro('costo_km_trasporto', rowTrasporti.COSTO_KM);
+    const sortedGru = state.gru?.length ? [...state.gru].sort((a, b) => (a.DISTANZA || 0) - (b.DISTANZA || 0)) : [];
+    const rowGru = sortedGru.find((r) => (r.DISTANZA || 0) >= km) || sortedGru[sortedGru.length - 1];
+    if (rowGru?.COSTO_KM != null) setParametro('costo_km_gru', rowGru.COSTO_KM);
+  }
+
+  /** Scrive state.parametri negli input del pannello */
+  function syncParametriToInputs() {
+    Object.keys(state.parametri).forEach((key) => {
+      const el = $(`[data-param="${key}"]`);
+      if (el && el.tagName === 'INPUT') {
+        const v = state.parametri[key];
+        el.value = v != null && v !== '' ? String(v) : '';
+      }
+    });
+  }
+
+  /** Legge gli input del pannello e aggiorna state.parametri */
+  function syncInputsToParametri() {
+    $$('[data-param]').forEach((el) => {
+      if (el.tagName !== 'INPUT') return;
+      const key = el.getAttribute('data-param');
+      const raw = el.value.trim();
+      const num = raw === '' ? null : parseFloat(raw);
+      state.parametri[key] = num != null && !Number.isNaN(num) ? num : null;
+    });
+  }
+  /** Prima di usare coordinate partenza in calcoli, aggiorna state dai campi del pannello */
+  function refreshCoordinatePartenzaFromParametri() {
+    const latEl = $('#param-lat-partenza');
+    const lonEl = $('#param-lon-partenza');
+    if (latEl?.value.trim() !== '') state.parametri.lat_partenza = parseFloat(latEl.value);
+    if (lonEl?.value.trim() !== '') state.parametri.lon_partenza = parseFloat(lonEl.value);
   }
 
   function buildProdottiSelect(obbligatorio) {
@@ -179,7 +262,7 @@
     state.valori.numero_posti_auto = posti ? (posti.value ? parseInt(posti.value, 10) : 1) : 1;
     state.valori.tecnici_interni = parseInt($('#input-tecnici-interni')?.value, 10) || 1;
     state.valori.presenza_tecnici_interni_pct = parseInt($('#input-presenza-interni')?.value, 10) ?? 100;
-    state.valori.tecnici_esterni = parseInt($('#input-tecnici-esterni')?.value, 10) || 0;
+    state.valori.tecnici_esterni = calcoloNumeroTecniciEsterni();
     state.valori.presenza_tecnici_esterni_pct = calcoloPresenzaEsterni();
     state.valori.giorni_noleggio_muletto = parseInt($('#input-giorni-muletto')?.value, 10) || 7;
     state.valori.costo_noleggio_muletto = calcoloCostoMuletto(state.valori.giorni_noleggio_muletto);
@@ -211,34 +294,54 @@
     return Number.isNaN(p) ? 0 : Math.max(0, Math.min(100, 100 - p));
   }
 
-  /** Noleggio muletto: 800 €/settimana (≤7), 1200 €/mese (≤30), 2300 €/2 mesi (≤60) */
+  /**
+   * Numero tecnici esterni: da interni N e presenza interni P_int % si ricava
+   * presenza esterni = 100 - P_int; numero_esterni tale che esterni/(interni+esterni) = presenza_esterni/100
+   * => numero_esterni = N * (100 - P_int) / P_int  (arrotondato). Se P_int = 0 si restituisce 0.
+   */
+  function calcoloNumeroTecniciEsterni() {
+    const n = parseInt($('#input-tecnici-interni')?.value, 10) || 0;
+    const pInt = parseInt($('#input-presenza-interni')?.value, 10);
+    if (n <= 0 || Number.isNaN(pInt) || pInt <= 0) return 0;
+    if (pInt >= 100) return 0;
+    const pEst = 100 - Math.min(100, Math.max(0, pInt));
+    return Math.round((n * pEst) / pInt);
+  }
+
+  /** Noleggio muletto: usa state.parametri (modificabili in sessione) */
   function calcoloCostoMuletto(giorni) {
     const g = parseInt(giorni, 10) || 0;
     if (g <= 0) return null;
-    if (g <= 7) return 800;
-    if (g <= 30) return 1200;
-    if (g <= 60) return 2300;
-    return 2300 + Math.ceil((g - 60) / 30) * 1100;
+    const sette = getParametro('muletto_settimana') ?? 800;
+    const mese = getParametro('muletto_mese') ?? 1200;
+    const dueMesi = getParametro('muletto_2mesi') ?? 2300;
+    if (g <= 7) return sette;
+    if (g <= 30) return mese;
+    if (g <= 60) return dueMesi;
+    return dueMesi + Math.ceil((g - 60) / 30) * (mese - sette);
   }
 
-  /** Noleggio scala: 600 € primo giorno + 100 €/giorno aggiuntivo */
+  /** Noleggio scala: usa state.parametri */
   function calcoloCostoScala(giorni) {
     const g = parseInt(giorni, 10) || 0;
     if (g <= 0) return null;
-    return 600 + (g - 1) * 100;
+    const primo = getParametro('scala_primo_giorno') ?? 600;
+    const extra = getParametro('scala_giorno_extra') ?? 100;
+    return primo + (g - 1) * extra;
   }
 
-  /** Costo servizio gru con trasporto da gru.json: fascia per distanza, COSTO_KM * distanza */
+  /** Costo servizio gru: usa state.parametri.costo_km_gru (valorizzato da gru.json per distanza, modificabile) */
   function getCostoGruPerDistanza(distanzaKm) {
-    if (!state.gru.length || distanzaKm == null) return null;
-    const sorted = [...state.gru].sort((a, b) => (a.DISTANZA || 0) - (b.DISTANZA || 0));
-    let row = sorted.find((r) => (r.DISTANZA || 0) >= distanzaKm) || sorted[sorted.length - 1];
-    const costoKm = row.COSTO_KM != null ? row.COSTO_KM : 0;
+    const costoKm = getParametro('costo_km_gru');
+    if (costoKm == null || distanzaKm == null) return null;
     return Math.round((costoKm * distanzaKm) * 100) / 100;
   }
 
   function aggiornaCampiCalcolati() {
+    const numeroEst = calcoloNumeroTecniciEsterni();
     const presenzaEst = calcoloPresenzaEsterni();
+    const elTecniciEst = $('#valore-tecnici-esterni');
+    if (elTecniciEst) elTecniciEst.textContent = String(numeroEst);
     const elPresenzaEst = $('#valore-presenza-esterni');
     if (elPresenzaEst) elPresenzaEst.textContent = `${presenzaEst}%`;
 
@@ -264,10 +367,15 @@
 
   function aggiornaRiepilogo() {
     aggiornaValori();
+    syncInputsToParametri();
     const out = $('#output-riepilogo');
     const sec = $('#riepilogo');
     if (!out || !sec) return;
-    out.textContent = JSON.stringify({ ...state.valori, distanza_km: state.distanzaKm }, null, 2);
+    out.textContent = JSON.stringify(
+      { ...state.valori, distanza_km: state.distanzaKm, parametri_sessione: state.parametri },
+      null,
+      2
+    );
     sec.hidden = false;
   }
 
@@ -287,6 +395,7 @@
         msgErr.hidden = false;
         return;
       }
+      refreshCoordinatePartenzaFromParametri();
       const partenza = getCoordinatePartenza();
       if (!partenza) {
         msgErr.textContent = 'Coordinate partenza non configurate (costanti.json).';
@@ -310,6 +419,8 @@
           const valDist = $('#valore-distanza');
           if (valDist) valDist.textContent = `${result.km} km`;
           abilitaProdotti();
+          aggiornaParametriDaDistanza();
+          syncParametriToInputs();
           mostraNascondiDomande();
           checkSubmitFn();
         }
@@ -345,7 +456,7 @@
     });
     document.getElementById('form-calcolo')?.addEventListener('input', (e) => {
       if (e.target.id === 'input-posti-auto') aggiornaValori();
-      if (e.target.matches('#input-tecnici-interni, #input-tecnici-esterni, #input-presenza-interni, #input-giorni-muletto, #input-giorni-scala, #input-giorni-gru')) {
+      if (e.target.matches('#input-tecnici-interni, #input-presenza-interni, #input-giorni-muletto, #input-giorni-scala, #input-giorni-gru')) {
         aggiornaValori();
         aggiornaCampiCalcolati();
       }
@@ -371,11 +482,25 @@
     }
   }
 
+  function bindParametri() {
+    initParametriFromDefaults();
+    syncParametriToInputs();
+    document.getElementById('panel-parametri')?.addEventListener('input', () => {
+      syncInputsToParametri();
+      aggiornaCampiCalcolati();
+    });
+    document.getElementById('panel-parametri')?.addEventListener('change', () => {
+      syncInputsToParametri();
+      aggiornaCampiCalcolati();
+    });
+  }
+
   async function init() {
     const ok = await initData();
     if (!ok) return;
     buildContainerProdotti();
     abilitaProdotti();
+    bindParametri();
     bindGeocode();
     bindForm();
     mostraNascondiDomande();
