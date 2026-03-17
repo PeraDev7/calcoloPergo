@@ -20,12 +20,41 @@
                 <section id="sezione-domande" class="sezione-domande" aria-live="polite">
                     <!-- Domanda 1: Indirizzo cantiere (sempre visibile) -->
                     <div class="domanda" id="domanda-indirizzo" data-domanda-id="indirizzo_cantiere">
-                        <label for="input-indirizzo">Indirizzo del cantiere</label>
-                        <div class="input-group">
-                            <input type="text" id="input-indirizzo" name="indirizzo_cantiere"
-                                   placeholder="Es. Via Roma 1, Milano" autocomplete="address-line1">
-                            <button type="button" id="btn-geocode" class="btn btn-secondary" aria-label="Calcola distanza">Calcola distanza</button>
+                        <label>Indirizzo del cantiere</label>
+
+                        <!-- Tab: metodo di inserimento -->
+                        <div class="indirizzo-tabs" role="tablist" aria-label="Metodo di inserimento indirizzo">
+                            <button type="button" class="tab-btn active" id="tab-digita"
+                                    role="tab" aria-selected="true" aria-controls="panel-digita">
+                                ✏️ Digita indirizzo
+                            </button>
+                            <button type="button" class="tab-btn" id="tab-mappa"
+                                    role="tab" aria-selected="false" aria-controls="panel-mappa">
+                                🗺 Seleziona su mappa
+                            </button>
                         </div>
+
+                        <!-- Panel: Digita con autocomplete -->
+                        <div id="panel-digita" class="indirizzo-panel" role="tabpanel" aria-labelledby="tab-digita">
+                            <div class="autocomplete-wrap">
+                                <div class="input-group">
+                                    <input type="text" id="input-indirizzo" name="indirizzo_cantiere"
+                                           placeholder="Es. Via Roma 1, Milano" autocomplete="off"
+                                           role="combobox" aria-autocomplete="list"
+                                           aria-expanded="false" aria-controls="autocomplete-list">
+                                    <button type="button" id="btn-geocode" class="btn btn-secondary">Calcola distanza</button>
+                                </div>
+                                <ul id="autocomplete-list" class="autocomplete-list" role="listbox"
+                                    aria-label="Suggerimenti indirizzo" hidden></ul>
+                            </div>
+                        </div>
+
+                                        <!-- Panel: Google Maps -->
+                        <div id="panel-mappa" class="indirizzo-panel" role="tabpanel" aria-labelledby="tab-mappa" hidden>
+                            <div id="mappa-cantiere" class="mappa-cantiere"></div>
+                            <p class="hint">Clicca sulla mappa per selezionare la posizione del cantiere.</p>
+                        </div>
+
                         <p id="msg-distanza" class="msg msg-distanza" role="status" aria-live="polite" hidden></p>
                         <p id="msg-errore-geocode" class="msg msg-errore" hidden></p>
                     </div>
@@ -46,53 +75,103 @@
                     <div class="sezione-tecnici-noleggi" id="sezione-tecnici-noleggi" hidden>
                         <h2 class="sezione-titolo">Tecnici e noleggi</h2>
 
-                        <div class="domanda">
-                            <label for="input-tecnici-interni">Tecnici interni</label>
-                            <input type="number" id="input-tecnici-interni" name="tecnici_interni" min="1" max="50" value="1" placeholder="1–50">
-                        </div>
-                        <div class="domanda">
-                            <label for="input-presenza-interni">Presenza tecnici interni (%)</label>
-                            <input type="number" id="input-presenza-interni" name="presenza_tecnici_interni_pct" min="0" max="100" value="100" placeholder="0–100">
-                        </div>
-                        <div class="domanda domanda-computed">
-                            <label>Tecnici esterni</label>
-                            <p id="valore-tecnici-esterni" class="valore-calcolato" aria-live="polite">0</p>
-                            <span class="hint">Calcolo automatico in base a interni e %</span>
-                        </div>
-                        <div class="domanda domanda-computed">
-                            <label>Presenza tecnici esterni (%)</label>
-                            <p id="valore-presenza-esterni" class="valore-calcolato" aria-live="polite">0</p>
-                            <span class="hint">Calcolo automatico (100 − % interni)</span>
-                        </div>
-
-                        <div class="domanda">
-                            <label for="input-giorni-muletto">Numero giorni noleggio muletto</label>
-                            <input type="number" id="input-giorni-muletto" name="giorni_noleggio_muletto" min="0" max="365" value="7" placeholder="Default 7">
-                        </div>
-                        <div class="domanda domanda-computed">
-                            <label>Noleggio muletto – costo</label>
-                            <p id="valore-costo-muletto" class="valore-calcolato" aria-live="polite">—</p>
-                            <span class="hint">800 €/settimana · 1200 €/mese · 2300 €/2 mesi</span>
+                        <!-- Tecnici: select interni + presenza % affiancati -->
+                        <div class="tecnici-row">
+                            <div class="domanda">
+                                <label for="input-tecnici-interni">Tecnici interni</label>
+                                <select id="input-tecnici-interni" name="tecnici_interni">
+                                    <option value="0">0</option>
+                                    <option value="1">1</option>
+                                    <option value="2" selected>2</option>
+                                    <option value="3">3</option>
+                                    <option value="4">4</option>
+                                    <option value="5">5</option>
+                                    <option value="6">6</option>
+                                    <option value="7">7</option>
+                                    <option value="8">8</option>
+                                    <option value="9">9</option>
+                                    <option value="10">10</option>
+                                </select>
+                            </div>
+                            <div class="domanda">
+                                <label for="input-presenza-interni">Presenza interni (%)</label>
+                                <input type="number" id="input-presenza-interni" name="presenza_tecnici_interni_pct"
+                                       min="0" max="100" value="100" placeholder="0–100">
+                            </div>
                         </div>
 
-                        <div class="domanda">
-                            <label for="input-giorni-scala">Numero giorni noleggio scala</label>
-                            <input type="number" id="input-giorni-scala" name="giorni_noleggio_scala" min="0" max="365" value="1" placeholder="Default 1">
-                        </div>
-                        <div class="domanda domanda-computed">
-                            <label>Noleggio scala – costo</label>
-                            <p id="valore-costo-scala" class="valore-calcolato" aria-live="polite">—</p>
-                            <span class="hint">600 € primo giorno, poi 100 €/giorno</span>
+                        <!-- Calcolati: tecnici esterni + presenza esterni -->
+                        <div class="tecnici-row tecnici-computed-row">
+                            <div class="domanda domanda-computed">
+                                <label>Tecnici esterni</label>
+                                <p id="valore-tecnici-esterni" class="valore-calcolato" aria-live="polite">0</p>
+                                <span class="hint">Calcolato da interni e %</span>
+                            </div>
+                            <div class="domanda domanda-computed">
+                                <label>Presenza esterni (%)</label>
+                                <p id="valore-presenza-esterni" class="valore-calcolato" aria-live="polite">0%</p>
+                                <span class="hint">100 − % interni</span>
+                            </div>
                         </div>
 
-                        <div class="domanda">
-                            <label for="input-giorni-gru">Numero giorni presenza gru</label>
-                            <input type="number" id="input-giorni-gru" name="giorni_presenza_gru" min="0" max="365" value="0" placeholder="0">
+                        <!-- Noleggio muletto -->
+                        <div class="noleggio-item">
+                            <label class="noleggio-toggle-label" for="toggle-muletto">
+                                <input type="checkbox" class="noleggio-toggle" id="toggle-muletto" name="attivo_muletto">
+                                <span class="toggle-switch" aria-hidden="true"></span>
+                                <span class="noleggio-toggle-testo">Noleggio muletto</span>
+                            </label>
+                            <div class="noleggio-dettagli" id="dettagli-muletto" hidden>
+                                <div class="domanda">
+                                    <label for="input-giorni-muletto">Numero giorni</label>
+                                    <input type="number" id="input-giorni-muletto" name="giorni_noleggio_muletto" min="1" max="365" value="7">
+                                </div>
+                                <div class="domanda domanda-computed">
+                                    <label>Costo stimato</label>
+                                    <p id="valore-costo-muletto" class="valore-calcolato" aria-live="polite">—</p>
+                                    <span class="hint">800 €/sett. · 1200 €/mese · 2300 €/2 mesi</span>
+                                </div>
+                            </div>
                         </div>
-                        <div class="domanda domanda-computed">
-                            <label>Servizio gru con trasporto</label>
-                            <p id="valore-gru-trasporto" class="valore-calcolato" aria-live="polite">—</p>
-                            <span class="hint">Costi da gru.json in base alla distanza</span>
+
+                        <!-- Noleggio scala -->
+                        <div class="noleggio-item">
+                            <label class="noleggio-toggle-label" for="toggle-scala">
+                                <input type="checkbox" class="noleggio-toggle" id="toggle-scala" name="attivo_scala">
+                                <span class="toggle-switch" aria-hidden="true"></span>
+                                <span class="noleggio-toggle-testo">Noleggio scala aerea</span>
+                            </label>
+                            <div class="noleggio-dettagli" id="dettagli-scala" hidden>
+                                <div class="domanda">
+                                    <label for="input-giorni-scala">Numero giorni</label>
+                                    <input type="number" id="input-giorni-scala" name="giorni_noleggio_scala" min="1" max="365" value="1">
+                                </div>
+                                <div class="domanda domanda-computed">
+                                    <label>Costo stimato</label>
+                                    <p id="valore-costo-scala" class="valore-calcolato" aria-live="polite">—</p>
+                                    <span class="hint">600 € primo giorno, poi 100 €/giorno</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Servizio gru -->
+                        <div class="noleggio-item">
+                            <label class="noleggio-toggle-label" for="toggle-gru">
+                                <input type="checkbox" class="noleggio-toggle" id="toggle-gru" name="attivo_gru">
+                                <span class="toggle-switch" aria-hidden="true"></span>
+                                <span class="noleggio-toggle-testo">Servizio gru</span>
+                            </label>
+                            <div class="noleggio-dettagli" id="dettagli-gru" hidden>
+                                <div class="domanda">
+                                    <label for="input-giorni-gru">Numero giorni</label>
+                                    <input type="number" id="input-giorni-gru" name="giorni_presenza_gru" min="1" max="365" value="1">
+                                </div>
+                                <div class="domanda domanda-computed">
+                                    <label>Costo con trasporto</label>
+                                    <p id="valore-gru-trasporto" class="valore-calcolato" aria-live="polite">—</p>
+                                    <span class="hint">Costi da gru.json in base alla distanza</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </section>
@@ -175,5 +254,8 @@
     <script src="js/domande.js"></script>
     <script src="js/geocode.js"></script>
     <script src="js/app.js"></script>
+    <script async defer
+        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDQ441Oo9XdGay7eAb5hZ2y0uOe_2CqDPM&libraries=places&callback=onGoogleMapsReady">
+    </script>
 </body>
 </html>
