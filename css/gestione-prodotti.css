@@ -1,0 +1,373 @@
+/* Gestione Prodotti - Stili specifici */
+
+.gestione-main {
+    max-width: 100%;
+}
+
+.header-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+/* ── Filtri ────────────────────────────────────────────── */
+.filtri-section {
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background: var(--bg);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+}
+
+.search-input {
+    flex: 1;
+    min-width: 200px;
+    padding: 0.6rem 1rem;
+    font: inherit;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    background: #fff;
+    font-size: 0.95rem;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(45, 80, 22, .1);
+}
+
+.filtro-select {
+    padding: 0.6rem 1rem;
+    font: inherit;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    background: #fff;
+    cursor: pointer;
+    font-size: 0.95rem;
+}
+
+.filtro-select:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+
+/* ── Lista Prodotti ────────────────────────────────────── */
+.lista-prodotti {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1.25rem;
+}
+
+.prodotto-card {
+    background: var(--card);
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    padding: 1.25rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 2px 6px rgba(0,0,0,.04);
+}
+
+.prodotto-card:hover {
+    border-color: var(--primary);
+    box-shadow: 0 6px 16px rgba(45, 80, 22, .15);
+    transform: translateY(-3px);
+}
+
+.prodotto-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+}
+
+.prodotto-nome {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--primary);
+    margin: 0;
+    line-height: 1.3;
+}
+
+.prodotto-badge {
+    background: var(--primary);
+    color: #fff;
+    padding: 0.25rem 0.6rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.prodotto-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.prodotto-info-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.4rem 0;
+    border-bottom: 1px solid var(--bg);
+    font-size: 0.85rem;
+}
+
+.prodotto-info-label {
+    color: var(--secondary);
+    font-weight: 500;
+}
+
+.prodotto-info-value {
+    color: var(--text);
+    font-weight: 600;
+}
+
+.prodotto-card-footer {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+    text-align: center;
+}
+
+.btn-modifica {
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    padding: 0.5rem 1.25rem;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+    width: 100%;
+}
+
+.btn-modifica:hover {
+    background: var(--primary-hover);
+}
+
+/* ── Modal Prodotto ────────────────────────────────────── */
+.modal-prodotto-content {
+    max-width: 900px;
+}
+
+/* ── Ore Posti Grid ────────────────────────────────────── */
+.ore-posti-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.ore-posto-item {
+    background: var(--bg);
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem;
+    transition: all 0.2s;
+}
+
+.ore-posto-item:focus-within {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(45, 80, 22, .1);
+    transform: translateY(-2px);
+}
+
+.ore-posto-label {
+    display: block;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--primary);
+    margin-bottom: 0.75rem;
+    text-align: center;
+    padding: 0.35rem;
+    background: linear-gradient(135deg, #f0f5eb 0%, #e5f0dc 100%);
+    border-radius: 6px;
+}
+
+.ore-posto-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.ore-posto-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.ore-posto-field-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.ore-posto-input {
+    width: 100%;
+    padding: 0.5rem;
+    font: inherit;
+    font-size: 1rem;
+    font-weight: 700;
+    text-align: center;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: #fff;
+    color: var(--primary);
+}
+
+.ore-posto-input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(45, 80, 22, .15);
+}
+
+.ore-posto-input.peso-input {
+    color: #c09000;
+}
+
+/* ── Accessori Grid ────────────────────────────────────── */
+.accessori-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.accessorio-item-edit {
+    background: #f0f5eb;
+    border: 2px solid rgba(45, 80, 22, .2);
+    border-radius: 8px;
+    padding: 1rem;
+    transition: all 0.2s;
+}
+
+.accessorio-item-edit:focus-within {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(45, 80, 22, .1);
+}
+
+.accessorio-nome {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--primary);
+    margin-bottom: 0.5rem;
+    display: block;
+}
+
+.accessorio-input {
+    width: 100%;
+    padding: 0.5rem;
+    font: inherit;
+    font-size: 1rem;
+    font-weight: 700;
+    text-align: center;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: #fff;
+    color: var(--primary);
+}
+
+.accessorio-input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(45, 80, 22, .15);
+}
+
+.accessorio-hint {
+    display: block;
+    margin-top: 0.35rem;
+    font-size: 0.75rem;
+    color: var(--secondary);
+    text-align: center;
+}
+
+/* ── Messaggio Vuoto ───────────────────────────────────── */
+.msg-vuoto {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--secondary);
+    font-size: 1.1rem;
+}
+
+/* ── Responsive ────────────────────────────────────────── */
+@media (max-width: 768px) {
+    .lista-prodotti {
+        grid-template-columns: 1fr;
+    }
+
+    .ore-posti-grid {
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        gap: 0.75rem;
+    }
+
+    .accessori-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .header-actions {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .header-actions .btn {
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .ore-posti-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .ore-posto-item {
+        padding: 0.75rem;
+    }
+
+    .ore-posto-label {
+        font-size: 0.85rem;
+    }
+}
+
+/* ── Animazioni ────────────────────────────────────────── */
+.prodotto-card {
+    animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ── Stati di salvataggio ──────────────────────────────── */
+.salvando {
+    position: relative;
+    pointer-events: none;
+    opacity: 0.6;
+}
+
+.salvando::after {
+    content: '💾 Salvataggio...';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--primary);
+    color: #fff;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(0,0,0,.2);
+    z-index: 1000;
+}

@@ -9,11 +9,14 @@
 <body>
     <div class="app">
         <header class="header">
-            <h1>Calcolo Pergosolar</h1>
+            <h1>PST Pergosolar</h1>
             <p class="subtitle">Configurazione preventivo</p>
+            <div class="header-buttons">
+                <a href="gestione-prodotti.html" class="btn btn-gestione">Gestione Prodotti</a>
+                <button type="button" id="btn-apri-parametri" class="btn btn-parametri">Parametri e costi</button>
+            </div>
         </header>
 
-        <div class="main-wrap">
         <main class="main">
             <form id="form-calcolo" class="form-calcolo" novalidate>
                 <!-- Le domande vengono iniettate qui da JS; stessa pagina, tutte visibili -->
@@ -122,15 +125,21 @@
                                 <span class="noleggio-toggle-testo">Noleggio muletto</span>
                             </label>
                             <div class="noleggio-dettagli" id="dettagli-muletto" hidden>
-                                <div class="domanda">
-                                    <label for="input-giorni-muletto">Numero giorni</label>
-                                    <input type="number" id="input-giorni-muletto" name="giorni_noleggio_muletto" min="1" max="365" value="7">
+                                <div class="noleggio-controlli">
+                                    <div class="controlli-giorni">
+                                        <label class="controlli-label">Giorni</label>
+                                        <div class="controlli-buttons">
+                                            <button type="button" class="btn-controllo btn-meno" data-target="input-giorni-muletto">−</button>
+                                            <input type="number" id="input-giorni-muletto" name="giorni_noleggio_muletto" min="1" max="365" value="7" readonly>
+                                            <button type="button" class="btn-controllo btn-piu" data-target="input-giorni-muletto">+</button>
+                                        </div>
+                                    </div>
+                                    <div class="controlli-costo">
+                                        <label class="controlli-label">Costo</label>
+                                        <p id="valore-costo-muletto" class="valore-costo" aria-live="polite">—</p>
+                                    </div>
                                 </div>
-                                <div class="domanda domanda-computed">
-                                    <label>Costo stimato</label>
-                                    <p id="valore-costo-muletto" class="valore-calcolato" aria-live="polite">—</p>
-                                    <span class="hint">800 €/sett. · 1200 €/mese · 2300 €/2 mesi</span>
-                                </div>
+                                <span class="hint">800 €/sett. · 1200 €/mese · 2300 €/2 mesi</span>
                             </div>
                         </div>
 
@@ -142,15 +151,21 @@
                                 <span class="noleggio-toggle-testo">Noleggio scala aerea</span>
                             </label>
                             <div class="noleggio-dettagli" id="dettagli-scala" hidden>
-                                <div class="domanda">
-                                    <label for="input-giorni-scala">Numero giorni</label>
-                                    <input type="number" id="input-giorni-scala" name="giorni_noleggio_scala" min="1" max="365" value="1">
+                                <div class="noleggio-controlli">
+                                    <div class="controlli-giorni">
+                                        <label class="controlli-label">Giorni</label>
+                                        <div class="controlli-buttons">
+                                            <button type="button" class="btn-controllo btn-meno" data-target="input-giorni-scala">−</button>
+                                            <input type="number" id="input-giorni-scala" name="giorni_noleggio_scala" min="1" max="365" value="1" readonly>
+                                            <button type="button" class="btn-controllo btn-piu" data-target="input-giorni-scala">+</button>
+                                        </div>
+                                    </div>
+                                    <div class="controlli-costo">
+                                        <label class="controlli-label">Costo</label>
+                                        <p id="valore-costo-scala" class="valore-costo" aria-live="polite">—</p>
+                                    </div>
                                 </div>
-                                <div class="domanda domanda-computed">
-                                    <label>Costo stimato</label>
-                                    <p id="valore-costo-scala" class="valore-calcolato" aria-live="polite">—</p>
-                                    <span class="hint">600 € primo giorno, poi 100 €/giorno</span>
-                                </div>
+                                <span class="hint">600 € primo giorno, poi 100 €/giorno</span>
                             </div>
                         </div>
 
@@ -162,16 +177,32 @@
                                 <span class="noleggio-toggle-testo">Servizio gru</span>
                             </label>
                             <div class="noleggio-dettagli" id="dettagli-gru" hidden>
-                                <div class="domanda">
-                                    <label for="input-giorni-gru">Numero giorni</label>
-                                    <input type="number" id="input-giorni-gru" name="giorni_presenza_gru" min="1" max="365" value="1">
+                                <div class="noleggio-controlli">
+                                    <div class="controlli-giorni">
+                                        <label class="controlli-label">Giorni</label>
+                                        <div class="controlli-buttons">
+                                            <button type="button" class="btn-controllo btn-meno" data-target="input-giorni-gru">−</button>
+                                            <input type="number" id="input-giorni-gru" name="giorni_presenza_gru" min="1" max="365" value="1" readonly>
+                                            <button type="button" class="btn-controllo btn-piu" data-target="input-giorni-gru">+</button>
+                                        </div>
+                                    </div>
+                                    <div class="controlli-costo">
+                                        <label class="controlli-label">Costo</label>
+                                        <p id="valore-gru-trasporto" class="valore-costo" aria-live="polite">—</p>
+                                    </div>
                                 </div>
-                                <div class="domanda domanda-computed">
-                                    <label>Costo con trasporto</label>
-                                    <p id="valore-gru-trasporto" class="valore-calcolato" aria-live="polite">—</p>
-                                    <span class="hint">Costi da gru.json in base alla distanza</span>
-                                </div>
+                                <span class="hint">Costi da gru.json in base alla distanza</span>
                             </div>
+                        </div>
+
+                        <!-- Servizi personalizzati -->
+                        <div class="servizi-personalizzati-section">
+                            <h3 class="servizi-personalizzati-titolo">Servizi personalizzati</h3>
+                            <p class="servizi-personalizzati-intro">Aggiungi servizi extra o costi particolari non previsti nelle voci standard</p>
+                            
+                            <div id="container-servizi-personalizzati"></div>
+                            
+                            <button type="button" id="btn-aggiungi-servizio" class="btn btn-aggiungi-servizio">Aggiungi servizio personalizzato</button>
                         </div>
                     </div>
                 </section>
@@ -187,73 +218,101 @@
                 <pre id="output-riepilogo"></pre>
             </section>
         </main>
+    </div>
 
-        <aside class="panel-parametri" id="panel-parametri" aria-label="Parametri e costi modificabili">
-            <h2 class="panel-parametri-titolo">Parametri e costi</h2>
-            <p class="panel-parametri-intro">Valori di default (da JSON/config). Modificabili solo per questa sessione; i calcoli si aggiornano in automatico.</p>
+    <!-- Modal Parametri e Costi -->
+    <div id="modal-parametri" class="modal" hidden>
+        <div class="modal-overlay"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Parametri e costi</h2>
+                <button type="button" id="btn-chiudi-modal" class="btn-chiudi-modal">✕</button>
+            </div>
 
-            <div class="parametri-group">
-                <h3 class="parametri-group-titolo">Partenza (coordinate)</h3>
-                <div class="domanda">
-                    <label for="param-lat-partenza">Latitudine</label>
-                    <input type="number" id="param-lat-partenza" step="any" data-param="lat_partenza" placeholder="es. 45.46">
+            <div class="modal-tabs">
+                <button type="button" class="modal-tab active" data-tab="costanti">Costanti</button>
+                <button type="button" class="modal-tab" data-tab="prodotti">Prodotti</button>
+                <button type="button" class="modal-tab" data-tab="accessori">Accessori</button>
+                <button type="button" class="modal-tab" data-tab="trasporti">Trasporti</button>
+                <button type="button" class="modal-tab" data-tab="gru">Gru</button>
+            </div>
+
+            <div class="modal-body">
+                <!-- Tab Costanti -->
+                <div class="tab-content active" data-tab-content="costanti">
+                    <div class="parametri-group">
+                        <h3 class="parametri-group-titolo">Coordinate partenza</h3>
+                        <div class="domanda">
+                            <label for="param-lat-partenza">Latitudine</label>
+                            <input type="number" id="param-lat-partenza" step="any" placeholder="es. 45.46">
+                        </div>
+                        <div class="domanda">
+                            <label for="param-lon-partenza">Longitudine</label>
+                            <input type="number" id="param-lon-partenza" step="any" placeholder="es. 9.19">
+                        </div>
+                    </div>
+
+                    <div class="parametri-group">
+                        <h3 class="parametri-group-titolo">Noleggio muletto</h3>
+                        <div class="domanda">
+                            <label for="param-muletto-settimana">€ settimana (≤7 gg)</label>
+                            <input type="number" id="param-muletto-settimana" min="0" step="1">
+                        </div>
+                        <div class="domanda">
+                            <label for="param-muletto-mese">€ mese (≤30 gg)</label>
+                            <input type="number" id="param-muletto-mese" min="0" step="1">
+                        </div>
+                        <div class="domanda">
+                            <label for="param-muletto-2mesi">€ 2 mesi (≤60 gg)</label>
+                            <input type="number" id="param-muletto-2mesi" min="0" step="1">
+                        </div>
+                    </div>
+
+                    <div class="parametri-group">
+                        <h3 class="parametri-group-titolo">Noleggio scala</h3>
+                        <div class="domanda">
+                            <label for="param-scala-primo">€ primo giorno</label>
+                            <input type="number" id="param-scala-primo" min="0" step="1">
+                        </div>
+                        <div class="domanda">
+                            <label for="param-scala-giorno">€ per giorno aggiuntivo</label>
+                            <input type="number" id="param-scala-giorno" min="0" step="1">
+                        </div>
+                    </div>
                 </div>
-                <div class="domanda">
-                    <label for="param-lon-partenza">Longitudine</label>
-                    <input type="number" id="param-lon-partenza" step="any" data-param="lon_partenza" placeholder="es. 9.19">
+
+                <!-- Tab Prodotti -->
+                <div class="tab-content" data-tab-content="prodotti">
+                    <div id="tabella-prodotti-container"></div>
+                </div>
+
+                <!-- Tab Accessori -->
+                <div class="tab-content" data-tab-content="accessori">
+                    <div id="tabella-accessori-container"></div>
+                </div>
+
+                <!-- Tab Trasporti -->
+                <div class="tab-content" data-tab-content="trasporti">
+                    <div id="tabella-trasporti-container"></div>
+                </div>
+
+                <!-- Tab Gru -->
+                <div class="tab-content" data-tab-content="gru">
+                    <div id="tabella-gru-container"></div>
                 </div>
             </div>
 
-            <div class="parametri-group">
-                <h3 class="parametri-group-titolo">Noleggio muletto</h3>
-                <div class="domanda">
-                    <label for="param-muletto-settimana">€ settimana (≤7 gg)</label>
-                    <input type="number" id="param-muletto-settimana" min="0" step="1" data-param="muletto_settimana">
-                </div>
-                <div class="domanda">
-                    <label for="param-muletto-mese">€ mese (≤30 gg)</label>
-                    <input type="number" id="param-muletto-mese" min="0" step="1" data-param="muletto_mese">
-                </div>
-                <div class="domanda">
-                    <label for="param-muletto-2mesi">€ 2 mesi (≤60 gg)</label>
-                    <input type="number" id="param-muletto-2mesi" min="0" step="1" data-param="muletto_2mesi">
-                </div>
+            <div class="modal-footer">
+                <button type="button" id="btn-salva-parametri" class="btn btn-primary">Salva modifiche</button>
+                <button type="button" id="btn-annulla-parametri" class="btn btn-secondary">Annulla</button>
             </div>
-
-            <div class="parametri-group">
-                <h3 class="parametri-group-titolo">Noleggio scala</h3>
-                <div class="domanda">
-                    <label for="param-scala-primo">€ primo giorno</label>
-                    <input type="number" id="param-scala-primo" min="0" step="1" data-param="scala_primo_giorno">
-                </div>
-                <div class="domanda">
-                    <label for="param-scala-giorno">€ per giorno aggiuntivo</label>
-                    <input type="number" id="param-scala-giorno" min="0" step="1" data-param="scala_giorno_extra">
-                </div>
-            </div>
-
-            <div class="parametri-group">
-                <h3 class="parametri-group-titolo">Trasporto (per distanza attuale)</h3>
-                <div class="domanda">
-                    <label for="param-costo-km-trasporto">€/km (trasporti.json)</label>
-                    <input type="number" id="param-costo-km-trasporto" min="0" step="0.01" data-param="costo_km_trasporto" placeholder="Dopo distanza">
-                </div>
-            </div>
-
-            <div class="parametri-group">
-                <h3 class="parametri-group-titolo">Gru (per distanza attuale)</h3>
-                <div class="domanda">
-                    <label for="param-costo-km-gru">€/km (gru.json)</label>
-                    <input type="number" id="param-costo-km-gru" min="0" step="0.01" data-param="costo_km_gru" placeholder="Dopo distanza">
-                </div>
-            </div>
-        </aside>
         </div>
     </div>
 
     <script src="js/domande.js"></script>
     <script src="js/geocode.js"></script>
     <script src="js/app.js"></script>
+    <script src="js/modal-parametri.js"></script>
     <script async defer
         src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDQ441Oo9XdGay7eAb5hZ2y0uOe_2CqDPM&libraries=places&callback=onGoogleMapsReady">
     </script>

@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestione Prodotti – Pergosolar</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/gestione-prodotti.css">
+</head>
+<body>
+    <div class="app">
+        <header class="header">
+            <h1>Gestione Prodotti</h1>
+            <p class="subtitle">Personalizza ore installazione per posto auto e accessori</p>
+            <div class="header-actions">
+                <a href="index.html" class="btn btn-secondary">← Torna al preventivo</a>
+                <button type="button" id="btn-salva-tutto" class="btn btn-primary">💾 Salva tutte le modifiche</button>
+            </div>
+        </header>
+
+        <main class="main gestione-main">
+            <!-- Filtro e ricerca -->
+            <div class="filtri-section">
+                <div class="input-group">
+                    <input type="text" id="search-prodotti" placeholder="🔍 Cerca prodotto..." class="search-input">
+                    <select id="filtro-posti" class="filtro-select">
+                        <option value="">Tutti i posti auto</option>
+                        <option value="1">1 posto auto</option>
+                        <option value="2">2 posti auto</option>
+                        <option value="3">3+ posti auto</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Lista prodotti -->
+            <div id="lista-prodotti" class="lista-prodotti">
+                <!-- Generato dinamicamente -->
+            </div>
+
+            <!-- Messaggio vuoto -->
+            <div id="msg-nessun-prodotto" class="msg-vuoto" hidden>
+                <p>Nessun prodotto trovato</p>
+            </div>
+        </main>
+
+        <!-- Modal dettaglio prodotto -->
+        <div id="modal-prodotto" class="modal" hidden>
+            <div class="modal-overlay"></div>
+            <div class="modal-content modal-prodotto-content">
+                <div class="modal-header">
+                    <h2 id="modal-prodotto-titolo">Prodotto</h2>
+                    <button type="button" id="btn-chiudi-modal-prodotto" class="btn-chiudi-modal">✕</button>
+                </div>
+
+                <div class="modal-body">
+                    <!-- Tabs -->
+                    <div class="modal-tabs">
+                        <button type="button" class="modal-tab active" data-tab="ore-base">Ore Base</button>
+                        <button type="button" class="modal-tab" data-tab="ore-posti">Ore per Posto Auto</button>
+                        <button type="button" class="modal-tab" data-tab="accessori">Ore Accessori</button>
+                        <button type="button" class="modal-tab" data-tab="trasporto">Trasporto</button>
+                    </div>
+
+                    <!-- Tab Ore Base -->
+                    <div class="tab-content active" data-tab-content="ore-base">
+                        <div class="parametri-group">
+                            <h3 class="parametri-group-titolo">Ore installazione base (1 posto auto)</h3>
+                            <div class="domanda">
+                                <label for="edit-ore-1pa">Ore per 1 posto auto</label>
+                                <input type="number" id="edit-ore-1pa" step="0.1" min="0">
+                            </div>
+                        </div>
+
+                        <div class="parametri-group">
+                            <h3 class="parametri-group-titolo">Informazioni generali</h3>
+                            <div class="domanda">
+                                <label for="edit-posti-auto">Numero posti auto (default)</label>
+                                <input type="number" id="edit-posti-auto" min="1" max="20">
+                            </div>
+                            <div class="domanda">
+                                <label for="edit-kg">Peso base - 1 PA (KG)</label>
+                                <input type="number" id="edit-kg" min="0">
+                                <span class="hint">Peso per 1 posto auto. I pesi per altre configurazioni si impostano nel tab "Ore per Posto Auto"</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tab Ore per Posto Auto -->
+                    <div class="tab-content" data-tab-content="ore-posti">
+                        <div class="parametri-group">
+                            <h3 class="parametri-group-titolo">Personalizza ore e peso per ogni posto auto</h3>
+                            <p class="hint">Imposta le ore di installazione e il peso per ogni configurazione di posti auto (da 1 a 20)</p>
+                            <div id="container-ore-posti" class="ore-posti-grid">
+                                <!-- Generato dinamicamente -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tab Accessori -->
+                    <div class="tab-content" data-tab-content="accessori">
+                        <div class="parametri-group">
+                            <h3 class="parametri-group-titolo">Ore installazione accessori</h3>
+                            <div id="container-accessori" class="accessori-grid">
+                                <!-- Generato dinamicamente -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tab Trasporto -->
+                    <div class="tab-content" data-tab-content="trasporto">
+                        <div class="parametri-group">
+                            <h3 class="parametri-group-titolo">Capacità mezzi di trasporto</h3>
+                            <div class="domanda">
+                                <label for="edit-bilico">Bilico 13mt (quantità)</label>
+                                <input type="number" id="edit-bilico" min="0">
+                            </div>
+                            <div class="domanda">
+                                <label for="edit-camion-gru">Camion gru (quantità)</label>
+                                <input type="number" id="edit-camion-gru" min="0">
+                            </div>
+                            <div class="domanda">
+                                <label for="edit-nostro-mezzo">Nostro mezzo (quantità)</label>
+                                <input type="number" id="edit-nostro-mezzo" min="0">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" id="btn-salva-prodotto" class="btn btn-primary">Salva modifiche</button>
+                    <button type="button" id="btn-annulla-prodotto" class="btn btn-secondary">Annulla</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/gestione-prodotti.js"></script>
+</body>
+</html>

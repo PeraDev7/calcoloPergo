@@ -1,0 +1,16 @@
+{
+  "name": "calcolo-pergosolar",
+  "version": "1.0.0",
+  "description": "Applicazione per il calcolo preventivi Pergosolar",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": ["pergosolar", "preventivi"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}

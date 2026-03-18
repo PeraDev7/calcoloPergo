@@ -33,22 +33,11 @@ body {
   padding: 1.5rem;
 }
 
-.main-wrap {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1.5rem;
-  align-items: start;
-}
-
-@media (min-width: 900px) {
-  .main-wrap {
-    grid-template-columns: 1fr 320px;
-  }
-}
 
 .header {
   margin-bottom: 1.5rem;
   text-align: center;
+  position: relative;
 }
 
 .header h1 {
@@ -62,6 +51,42 @@ body {
   margin: 0.25rem 0 0;
   font-size: 0.95rem;
   color: var(--secondary);
+}
+
+.header-buttons {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+}
+
+.btn-parametri,
+.btn-gestione {
+  background: var(--secondary);
+  color: #fff;
+  border: none;
+  padding: 0.6rem 1.25rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: all 0.2s;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-gestione {
+  background: linear-gradient(135deg, #4a5c4a 0%, var(--secondary) 100%);
+}
+
+.btn-parametri:hover,
+.btn-gestione:hover {
+  background: var(--primary);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(45, 80, 22, .25);
 }
 
 .main {
@@ -208,11 +233,40 @@ body {
   border-bottom: none;
 }
 
+.slot-prodotto-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
 .slot-prodotto-titolo {
-  margin: 0 0 0.75rem;
+  margin: 0;
   font-size: 1rem;
   font-weight: 600;
   color: var(--primary);
+}
+
+.btn-rimuovi-prodotto {
+  background: transparent;
+  border: 1px solid #d44;
+  color: #d44;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 1.1rem;
+  line-height: 1;
+  padding: 0;
+  transition: background 0.15s, color 0.15s;
+}
+
+.btn-rimuovi-prodotto:hover {
+  background: #d44;
+  color: #fff;
 }
 
 .slot-prodotto .domanda {
@@ -221,6 +275,101 @@ body {
 
 .slot-prodotto .domanda:last-child {
   margin-bottom: 0;
+}
+
+/* ── Accessori (stile simile a noleggi) ────────────────── */
+.accessorio-item {
+  border: 2px solid rgba(45, 80, 22, .2);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-top: 0.75rem;
+  box-shadow: 0 2px 6px rgba(45, 80, 22, .06);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.accessorio-item:hover {
+  border-color: rgba(45, 80, 22, .4);
+  box-shadow: 0 4px 12px rgba(45, 80, 22, .12);
+}
+
+.accessorio-toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  cursor: pointer;
+  background: linear-gradient(135deg, #f0f5eb 0%, #e5f0dc 100%);
+  font-weight: 600;
+  font-size: 0.95rem;
+  user-select: none;
+  transition: background 0.2s;
+}
+
+.accessorio-toggle-label:hover {
+  background: linear-gradient(135deg, #e5f0dc 0%, #d9ebc9 100%);
+}
+
+.accessorio-toggle {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.accessorio-toggle-testo {
+  color: var(--primary);
+}
+
+.accessorio-dettagli {
+  padding: 1rem 0.9rem;
+  border-top: 1px solid rgba(45, 80, 22, .15);
+  background: #fafaf8;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  animation: slideDown 0.2s ease-out;
+}
+
+.radio-group-inline {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.radio-label-inline {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 0.5rem 0.85rem;
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  background: var(--card);
+  transition: all 0.2s;
+  flex: 1;
+  justify-content: center;
+}
+
+.radio-label-inline:hover {
+  border-color: var(--primary);
+  background: #f0f5eb;
+}
+
+.radio-label-inline:has(input:checked) {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: #fff;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(45, 80, 22, .2);
+}
+
+.radio-label-inline input[type="radio"] {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  accent-color: #fff;
 }
 
 .btn-aggiungi-prodotto {
@@ -244,7 +393,7 @@ body {
 .sezione-tecnici-noleggi {
   margin-top: 1rem;
   padding-top: 1rem;
-  border-top: 1px solid var(--border);
+  border-top: 2px solid var(--border);
 }
 
 .sezione-titolo {
@@ -268,27 +417,34 @@ body {
 
 /* ── Noleggio toggle items ──────────────────────────────── */
 .noleggio-item {
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  border: 2px solid var(--border);
+  border-radius: 10px;
   overflow: hidden;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.75rem;
+  box-shadow: 0 2px 6px rgba(0,0,0,.04);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.noleggio-item:hover {
+  border-color: rgba(45, 80, 22, .3);
+  box-shadow: 0 4px 12px rgba(0,0,0,.08);
 }
 
 .noleggio-toggle-label {
   display: flex;
   align-items: center;
-  gap: 0.65rem;
-  padding: 0.6rem 0.9rem;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
   cursor: pointer;
-  background: var(--bg);
+  background: linear-gradient(135deg, var(--bg) 0%, #e8e8e3 100%);
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   user-select: none;
-  transition: background 0.15s;
+  transition: background 0.2s;
 }
 
 .noleggio-toggle-label:hover {
-  background: #e8e8e3;
+  background: linear-gradient(135deg, #e8e8e3 0%, #ddd 100%);
 }
 
 /* Nascondi la checkbox nativa */
@@ -303,51 +459,325 @@ body {
 .toggle-switch {
   position: relative;
   display: inline-block;
-  width: 38px;
-  height: 22px;
+  width: 44px;
+  height: 24px;
   background: #ccc;
-  border-radius: 11px;
+  border-radius: 12px;
   flex-shrink: 0;
   transition: background 0.2s;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,.1);
 }
 
 .toggle-switch::after {
   content: '';
   position: absolute;
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   background: #fff;
   border-radius: 50%;
   top: 3px;
   left: 3px;
-  transition: left 0.2s;
-  box-shadow: 0 1px 3px rgba(0,0,0,.2);
+  transition: left 0.2s, box-shadow 0.2s;
+  box-shadow: 0 2px 4px rgba(0,0,0,.2);
 }
 
-.noleggio-toggle:checked + .toggle-switch {
+.noleggio-toggle:checked + .toggle-switch,
+.accessorio-toggle:checked + .toggle-switch {
   background: var(--primary);
 }
 
-.noleggio-toggle:checked + .toggle-switch::after {
-  left: 19px;
+.noleggio-toggle:checked + .toggle-switch::after,
+.accessorio-toggle:checked + .toggle-switch::after {
+  left: 23px;
+  box-shadow: 0 2px 6px rgba(45, 80, 22, .3);
 }
 
-.noleggio-toggle:focus-visible + .toggle-switch {
+.noleggio-toggle:focus-visible + .toggle-switch,
+.accessorio-toggle:focus-visible + .toggle-switch {
   outline: 2px solid var(--primary);
   outline-offset: 2px;
 }
 
 .noleggio-dettagli {
-  padding: 0.75rem 0.9rem;
+  padding: 1rem 0.9rem;
   border-top: 1px solid var(--border);
   background: var(--card);
   display: flex;
   flex-direction: column;
-  gap: 0.65rem;
+  gap: 0.5rem;
+  animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.noleggio-controlli {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.controlli-giorni {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.controlli-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.controlli-buttons {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-controllo {
+  width: 52px;
+  height: 52px;
+  border: 2px solid var(--primary);
+  background: linear-gradient(135deg, #fff 0%, #f5f5f0 100%);
+  color: var(--primary);
+  border-radius: 10px;
+  font-size: 1.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+  box-shadow: 0 2px 4px rgba(0,0,0,.08);
+}
+
+.btn-controllo:hover {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+  color: #fff;
+  transform: scale(1.08);
+  box-shadow: 0 4px 12px rgba(45, 80, 22, .25);
+}
+
+.btn-controllo:active {
+  transform: scale(0.92);
+  box-shadow: 0 1px 2px rgba(0,0,0,.1);
+}
+
+.controlli-buttons input {
+  width: 80px;
+  text-align: center;
+  font-size: 1.4rem;
+  font-weight: 700;
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  padding: 0.6rem;
+  background: var(--bg);
+  color: var(--primary);
+  box-shadow: inset 0 1px 3px rgba(0,0,0,.05);
+}
+
+.controlli-buttons input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(45, 80, 22, .15);
+}
+
+.controlli-costo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: flex-end;
+}
+
+.valore-costo {
+  margin: 0;
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--primary);
+  background: linear-gradient(135deg, #f0f5eb 0%, #e5f0dc 100%);
+  padding: 1rem 1.5rem;
+  border-radius: 10px;
+  min-width: 140px;
+  text-align: center;
+  border: 2px solid rgba(45, 80, 22, .15);
+  box-shadow: 0 2px 8px rgba(45, 80, 22, .08);
 }
 
 .sezione-tecnici-noleggi .domanda {
   margin-bottom: 0.75rem;
+}
+
+.noleggio-dettagli .hint {
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  text-align: center;
+}
+
+/* ── Servizi Personalizzati ────────────────────────────── */
+.servizi-personalizzati-section {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 2px solid var(--border);
+}
+
+.servizi-personalizzati-titolo {
+  margin: 0 0 0.5rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.servizi-personalizzati-intro {
+  margin: 0 0 1.25rem;
+  font-size: 0.9rem;
+  color: var(--secondary);
+  line-height: 1.4;
+}
+
+#container-servizi-personalizzati {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+#container-servizi-personalizzati:empty {
+  display: none;
+}
+
+#container-servizi-personalizzati:not(:empty) {
+  padding: 1rem;
+  background: #fffef8;
+  border-radius: 8px;
+  border: 1px dashed #e0b020;
+}
+
+.servizio-personalizzato-item {
+  border: 2px solid #e0b020;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #fffef8;
+  box-shadow: 0 2px 8px rgba(224, 176, 32, .1);
+  animation: slideDown 0.2s ease-out;
+}
+
+.servizio-personalizzato-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.85rem 1rem;
+  background: linear-gradient(135deg, #fff9e6 0%, #fff3cc 100%);
+  border-bottom: 1px solid #e0b020;
+}
+
+.servizio-personalizzato-titolo {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #c09000;
+}
+
+.btn-rimuovi-servizio {
+  background: transparent;
+  border: 1px solid #d44;
+  color: #d44;
+  border-radius: 50%;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+  padding: 0;
+  transition: background 0.15s, color 0.15s;
+}
+
+.btn-rimuovi-servizio:hover {
+  background: #d44;
+  color: #fff;
+}
+
+.servizio-personalizzato-body {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.servizio-personalizzato-body textarea {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  font: inherit;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #fff;
+  resize: vertical;
+}
+
+.servizio-personalizzato-body textarea:focus {
+  outline: none;
+  border-color: #e0b020;
+  box-shadow: 0 0 0 2px rgba(224, 176, 32, .15);
+}
+
+.servizio-personalizzato-body input[type="text"],
+.servizio-personalizzato-body input[type="number"] {
+  border-color: #e0b020;
+}
+
+.servizio-personalizzato-body input[type="text"]:focus,
+.servizio-personalizzato-body input[type="number"]:focus {
+  border-color: #c09000;
+  box-shadow: 0 0 0 2px rgba(224, 176, 32, .2);
+}
+
+.servizio-personalizzato-body input[type="number"] {
+  font-weight: 600;
+  color: #c09000;
+}
+
+.btn-aggiungi-servizio {
+  margin-top: 0.5rem;
+  background: transparent;
+  color: #c09000;
+  border: 2px dashed #e0b020;
+  border-radius: 8px;
+  padding: 0.75rem 1.25rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  width: 100%;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+
+.btn-aggiungi-servizio:hover {
+  background: #fff9e6;
+  border-color: #c09000;
+  color: #a07800;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(224, 176, 32, .15);
 }
 
 .hint {
@@ -357,71 +787,189 @@ body {
   color: var(--secondary);
 }
 
-.panel-parametri {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  padding: 1.25rem;
-  position: sticky;
-  top: 1rem;
+/* ── Modal Parametri ────────────────────────────────────── */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.panel-parametri-titolo {
-  margin: 0 0 0.35rem;
-  font-size: 1.1rem;
+.modal-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(2px);
+}
+
+.modal-content {
+  position: relative;
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  width: 90%;
+  max-width: 1000px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  z-index: 1;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 1.3rem;
   font-weight: 700;
   color: var(--primary);
 }
 
-.panel-parametri-intro {
-  margin: 0 0 1rem;
-  font-size: 0.8rem;
+.btn-chiudi-modal {
+  background: transparent;
+  border: none;
+  font-size: 1.5rem;
   color: var(--secondary);
-  line-height: 1.4;
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: background 0.15s, color 0.15s;
+}
+
+.btn-chiudi-modal:hover {
+  background: var(--bg);
+  color: var(--text);
+}
+
+.modal-tabs {
+  display: flex;
+  gap: 0;
+  padding: 0 1.5rem;
+  border-bottom: 2px solid var(--border);
+  background: var(--bg);
+}
+
+.modal-tab {
+  padding: 0.75rem 1.25rem;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border: none;
+  background: transparent;
+  color: var(--secondary);
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.modal-tab:hover:not(.active) {
+  color: var(--text);
+}
+
+.modal-tab.active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+}
+
+.modal-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.5rem;
+}
+
+.tab-content {
+  display: none;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--border);
+  background: var(--bg);
 }
 
 .parametri-group {
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--border);
 }
 
 .parametri-group:last-child {
   margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
 }
 
 .parametri-group-titolo {
-  margin: 0 0 0.5rem;
-  font-size: 0.9rem;
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
   font-weight: 600;
-  color: var(--text);
+  color: var(--primary);
 }
 
-.parametri-hint {
-  margin: 0 0 0.5rem;
-  font-size: 0.8rem;
-  color: var(--secondary);
-}
-
-.panel-parametri .domanda {
-  margin-bottom: 0.5rem;
-}
-
-.panel-parametri .domanda:last-child {
-  margin-bottom: 0;
-}
-
-.panel-parametri input {
+.tabella-editable {
   width: 100%;
-  padding: 0.4rem 0.6rem;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.tabella-editable th {
+  background: var(--bg);
+  padding: 0.6rem 0.75rem;
+  text-align: left;
+  font-weight: 600;
+  border-bottom: 2px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.tabella-editable td {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.tabella-editable input {
+  width: 100%;
+  padding: 0.35rem 0.5rem;
   font: inherit;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 4px;
   background: #fff;
 }
 
-.panel-parametri input:focus {
+.tabella-editable input:focus {
   outline: none;
   border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(45, 80, 22, .15);
+}
+
+.tabella-editable tr:hover {
+  background: #fafaf8;
 }
 
 .form-footer {
@@ -543,8 +1091,80 @@ body {
   display: none !important;
 }
 
+@media (max-width: 768px) {
+  .header-buttons {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .btn-parametri,
+  .btn-gestione {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .modal-content {
+    width: 95%;
+    max-height: 90vh;
+  }
+
+  .modal-tabs {
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  .modal-tab {
+    font-size: 0.85rem;
+    padding: 0.6rem 1rem;
+  }
+
+  .tabella-editable {
+    font-size: 0.75rem;
+  }
+
+  .tabella-editable th,
+  .tabella-editable td {
+    padding: 0.4rem 0.5rem;
+  }
+
+  .noleggio-controlli {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+  }
+
+  .controlli-costo {
+    align-items: center;
+  }
+
+  .valore-costo {
+    width: 100%;
+  }
+}
+
 @media (max-width: 480px) {
   .app { padding: 1rem; }
   .input-group { flex-direction: column; }
   .input-group .btn { width: 100%; }
+  
+  .modal-body {
+    padding: 1rem;
+  }
+
+  .modal-header,
+  .modal-footer {
+    padding: 1rem;
+  }
+
+  .servizio-personalizzato-header {
+    padding: 0.75rem;
+  }
+
+  .servizio-personalizzato-titolo {
+    font-size: 0.85rem;
+  }
+
+  .servizio-personalizzato-body {
+    padding: 0.75rem;
+  }
 }

@@ -12,7 +12,7 @@
     valori: {},
     distanzaKm: null,
     coordCantiere: null,
-    /** Parametri e costi modificabili in sessione (default da JSON/hardcoded, non si salvano sui file) */
+    serviziPersonalizzati: [],
     parametri: {
       lat_partenza: null,
       lon_partenza: null,
@@ -26,6 +26,9 @@
     },
   };
   let checkSubmitFn = () => {};
+  let serviziPersonalizzatiCounter = 0;
+
+  window.APP_STATE = state;
 
   const $ = (sel, root = document) => root.querySelector(sel);
   const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -52,6 +55,17 @@
     }
     return true;
   }
+
+  async function reloadData() {
+    const ok = await initData();
+    if (ok) {
+      initParametriFromDefaults();
+      buildContainerProdotti();
+      mostraNascondiDomande();
+    }
+  }
+
+  window.APP_RELOAD_DATA = reloadData;
 
   function getCoordinatePartenza() {
     const lat = getParametro('lat_partenza') ?? state.costanti?.coordinate_partenza?.lat;
@@ -100,27 +114,6 @@
     if (rowGru?.COSTO_KM != null) setParametro('costo_km_gru', rowGru.COSTO_KM);
   }
 
-  /** Scrive state.parametri negli input del pannello */
-  function syncParametriToInputs() {
-    Object.keys(state.parametri).forEach((key) => {
-      const el = $(`[data-param="${key}"]`);
-      if (el && el.tagName === 'INPUT') {
-        const v = state.parametri[key];
-        el.value = v != null && v !== '' ? String(v) : '';
-      }
-    });
-  }
-
-  /** Legge gli input del pannello e aggiorna state.parametri */
-  function syncInputsToParametri() {
-    $$('[data-param]').forEach((el) => {
-      if (el.tagName !== 'INPUT') return;
-      const key = el.getAttribute('data-param');
-      const raw = el.value.trim();
-      const num = raw === '' ? null : parseFloat(raw);
-      state.parametri[key] = num != null && !Number.isNaN(num) ? num : null;
-    });
-  }
   /** Prima di usare coordinate partenza in calcoli, aggiorna state dai campi del pannello */
   function refreshCoordinatePartenzaFromParametri() {
     const latEl = $('#param-lat-partenza');
@@ -153,11 +146,12 @@
     opt0.textContent = 'Nessuno';
     frag.appendChild(opt0);
     (state.accessori || []).forEach((acc) => {
-      const mod = acc.MODELLO_STRUTTURA;
-      if (!mod) return;
+      const nome = acc.nome;
+      const nomeProdotti = acc.nome_prodotti;
+      if (!nome || !nomeProdotti) return;
       const opt = document.createElement('option');
-      opt.value = mod;
-      opt.textContent = mod;
+      opt.value = nomeProdotti;
+      opt.textContent = nome;
       frag.appendChild(opt);
     });
     return frag;
@@ -177,10 +171,26 @@
       slot.setAttribute('data-slot', i);
       if (i > 1) slot.hidden = true;
 
+      const slotHeader = document.createElement('div');
+      slotHeader.className = 'slot-prodotto-header';
+
       const titolo = document.createElement('h3');
       titolo.className = 'slot-prodotto-titolo';
       titolo.textContent = `Prodotto ${i}${obbligatorio ? ' (obbligatorio)' : ' (opzionale)'}`;
-      slot.appendChild(titolo);
+      slotHeader.appendChild(titolo);
+
+      if (i > 1) {
+        const btnRimuovi = document.createElement('button');
+        btnRimuovi.type = 'button';
+        btnRimuovi.className = 'btn-rimuovi-prodotto';
+        btnRimuovi.textContent = '✕';
+        btnRimuovi.title = 'Rimuovi prodotto';
+        btnRimuovi.setAttribute('data-slot', i);
+        btnRimuovi.addEventListener('click', () => rimuoviProdotto(i));
+        slotHeader.appendChild(btnRimuovi);
+      }
+
+      slot.appendChild(slotHeader);
 
       const rowModello = document.createElement('div');
       rowModello.className = 'domanda';
@@ -213,18 +223,102 @@
         slot.appendChild(rowPosti);
       }
 
+      const accessorioItem = document.createElement('div');
+      accessorioItem.className = 'accessorio-item';
+      
+      const accessorioToggleLabel = document.createElement('label');
+      accessorioToggleLabel.className = 'accessorio-toggle-label';
+      accessorioToggleLabel.setAttribute('for', `toggle-accessorio-${i}`);
+      
+      const toggleCheckbox = document.createElement('input');
+      toggleCheckbox.type = 'checkbox';
+      toggleCheckbox.className = 'accessorio-toggle';
+      toggleCheckbox.id = `toggle-accessorio-${i}`;
+      toggleCheckbox.name = `attivo_accessorio_${i}`;
+      
+      const toggleSwitch = document.createElement('span');
+      toggleSwitch.className = 'toggle-switch';
+      toggleSwitch.setAttribute('aria-hidden', 'true');
+      
+      const toggleTesto = document.createElement('span');
+      toggleTesto.className = 'accessorio-toggle-testo';
+      toggleTesto.textContent = 'Aggiungi accessorio';
+      
+      accessorioToggleLabel.appendChild(toggleCheckbox);
+      accessorioToggleLabel.appendChild(toggleSwitch);
+      accessorioToggleLabel.appendChild(toggleTesto);
+      accessorioItem.appendChild(accessorioToggleLabel);
+      
+      const accessorioDettagli = document.createElement('div');
+      accessorioDettagli.className = 'accessorio-dettagli';
+      accessorioDettagli.id = `dettagli-accessorio-${i}`;
+      accessorioDettagli.hidden = true;
+      
       const rowAccessorio = document.createElement('div');
       rowAccessorio.className = 'domanda';
       const labelAcc = document.createElement('label');
       labelAcc.setAttribute('for', `input-accessorio-${i}`);
-      labelAcc.textContent = 'Accessorio';
+      labelAcc.textContent = 'Seleziona accessorio';
       const selectAcc = document.createElement('select');
       selectAcc.id = `input-accessorio-${i}`;
       selectAcc.name = `accessorio_${i}`;
       selectAcc.appendChild(buildAccessoriSelect());
       rowAccessorio.appendChild(labelAcc);
       rowAccessorio.appendChild(selectAcc);
-      slot.appendChild(rowAccessorio);
+      accessorioDettagli.appendChild(rowAccessorio);
+
+      const rowAccessorioOpzioni = document.createElement('div');
+      rowAccessorioOpzioni.className = 'domanda';
+      
+      const labelOpzioni = document.createElement('label');
+      labelOpzioni.textContent = 'Modalità';
+      
+      const radioGroup = document.createElement('div');
+      radioGroup.className = 'radio-group-inline';
+      
+      const radioFornito = document.createElement('label');
+      radioFornito.className = 'radio-label-inline';
+      const inputFornito = document.createElement('input');
+      inputFornito.type = 'radio';
+      inputFornito.name = `accessorio_modalita_${i}`;
+      inputFornito.value = 'fornito';
+      inputFornito.id = `accessorio-fornito-${i}`;
+      inputFornito.checked = true;
+      radioFornito.appendChild(inputFornito);
+      radioFornito.appendChild(document.createTextNode(' Solo fornito'));
+      
+      const radioInstallato = document.createElement('label');
+      radioInstallato.className = 'radio-label-inline';
+      const inputInstallato = document.createElement('input');
+      inputInstallato.type = 'radio';
+      inputInstallato.name = `accessorio_modalita_${i}`;
+      inputInstallato.value = 'installato';
+      inputInstallato.id = `accessorio-installato-${i}`;
+      radioInstallato.appendChild(inputInstallato);
+      radioInstallato.appendChild(document.createTextNode(' Fornito e installato'));
+      
+      radioGroup.appendChild(radioFornito);
+      radioGroup.appendChild(radioInstallato);
+      
+      rowAccessorioOpzioni.appendChild(labelOpzioni);
+      rowAccessorioOpzioni.appendChild(radioGroup);
+      accessorioDettagli.appendChild(rowAccessorioOpzioni);
+      
+      accessorioItem.appendChild(accessorioDettagli);
+      slot.appendChild(accessorioItem);
+
+      toggleCheckbox.addEventListener('change', () => {
+        accessorioDettagli.hidden = !toggleCheckbox.checked;
+        if (!toggleCheckbox.checked) {
+          selectAcc.value = '';
+          inputFornito.checked = true;
+        }
+        aggiornaValori();
+      });
+
+      selectAcc.addEventListener('change', () => {
+        aggiornaValori();
+      });
 
       container.appendChild(slot);
     }
@@ -246,6 +340,129 @@
     container.appendChild(btnAdd);
   }
 
+  function rimuoviProdotto(slot) {
+    const slotEl = $(`.slot-prodotto[data-slot="${slot}"]`);
+    if (!slotEl) return;
+    
+    const selectProdotto = $(`#input-prodotto-${slot}`);
+    const toggleAccessorio = $(`#toggle-accessorio-${slot}`);
+    const selectAccessorio = $(`#input-accessorio-${slot}`);
+    
+    if (selectProdotto) selectProdotto.value = '';
+    if (toggleAccessorio) toggleAccessorio.checked = false;
+    if (selectAccessorio) selectAccessorio.value = '';
+    
+    const dettagliAccessorio = $(`#dettagli-accessorio-${slot}`);
+    if (dettagliAccessorio) dettagliAccessorio.hidden = true;
+    
+    const radioFornito = $(`#accessorio-fornito-${slot}`);
+    if (radioFornito) radioFornito.checked = true;
+    
+    slotEl.hidden = true;
+    
+    const btnAdd = $('#btn-aggiungi-prodotto');
+    if (btnAdd) btnAdd.hidden = false;
+    
+    aggiornaValori();
+    checkSubmitFn();
+  }
+
+  function aggiungiServizioPersonalizzato() {
+    const container = $('#container-servizi-personalizzati');
+    if (!container) return;
+
+    serviziPersonalizzatiCounter++;
+    const id = serviziPersonalizzatiCounter;
+
+    const servizioItem = document.createElement('div');
+    servizioItem.className = 'servizio-personalizzato-item';
+    servizioItem.setAttribute('data-servizio-id', id);
+
+    const header = document.createElement('div');
+    header.className = 'servizio-personalizzato-header';
+
+    const titolo = document.createElement('h4');
+    titolo.className = 'servizio-personalizzato-titolo';
+    titolo.textContent = `Servizio personalizzato #${id}`;
+
+    const btnRimuovi = document.createElement('button');
+    btnRimuovi.type = 'button';
+    btnRimuovi.className = 'btn-rimuovi-servizio';
+    btnRimuovi.textContent = '✕';
+    btnRimuovi.title = 'Rimuovi servizio';
+    btnRimuovi.addEventListener('click', () => rimuoviServizioPersonalizzato(id));
+
+    header.appendChild(titolo);
+    header.appendChild(btnRimuovi);
+    servizioItem.appendChild(header);
+
+    const body = document.createElement('div');
+    body.className = 'servizio-personalizzato-body';
+
+    const rowDescrizione = document.createElement('div');
+    rowDescrizione.className = 'domanda';
+    const labelDesc = document.createElement('label');
+    labelDesc.setAttribute('for', `servizio-desc-${id}`);
+    labelDesc.textContent = 'Descrizione servizio';
+    const inputDesc = document.createElement('input');
+    inputDesc.type = 'text';
+    inputDesc.id = `servizio-desc-${id}`;
+    inputDesc.name = `servizio_desc_${id}`;
+    inputDesc.placeholder = 'Es. Trasporto speciale, Lavori extra, ecc.';
+    inputDesc.addEventListener('input', aggiornaValori);
+    rowDescrizione.appendChild(labelDesc);
+    rowDescrizione.appendChild(inputDesc);
+    body.appendChild(rowDescrizione);
+
+    const rowCosto = document.createElement('div');
+    rowCosto.className = 'domanda';
+    const labelCosto = document.createElement('label');
+    labelCosto.setAttribute('for', `servizio-costo-${id}`);
+    labelCosto.textContent = 'Costo (€)';
+    const inputCosto = document.createElement('input');
+    inputCosto.type = 'number';
+    inputCosto.id = `servizio-costo-${id}`;
+    inputCosto.name = `servizio_costo_${id}`;
+    inputCosto.min = 0;
+    inputCosto.step = 0.01;
+    inputCosto.placeholder = '0.00';
+    inputCosto.addEventListener('input', aggiornaValori);
+    rowCosto.appendChild(labelCosto);
+    rowCosto.appendChild(inputCosto);
+    body.appendChild(rowCosto);
+
+    const rowNote = document.createElement('div');
+    rowNote.className = 'domanda';
+    const labelNote = document.createElement('label');
+    labelNote.setAttribute('for', `servizio-note-${id}`);
+    labelNote.textContent = 'Note aggiuntive (opzionale)';
+    const textareaNote = document.createElement('textarea');
+    textareaNote.id = `servizio-note-${id}`;
+    textareaNote.name = `servizio_note_${id}`;
+    textareaNote.rows = 2;
+    textareaNote.placeholder = 'Dettagli o informazioni aggiuntive...';
+    textareaNote.addEventListener('input', aggiornaValori);
+    rowNote.appendChild(labelNote);
+    rowNote.appendChild(textareaNote);
+    body.appendChild(rowNote);
+
+    servizioItem.appendChild(body);
+    container.appendChild(servizioItem);
+
+    state.serviziPersonalizzati.push({ id, descrizione: '', costo: 0, note: '' });
+    aggiornaValori();
+  }
+
+  function rimuoviServizioPersonalizzato(id) {
+    const servizioEl = $(`.servizio-personalizzato-item[data-servizio-id="${id}"]`);
+    if (servizioEl) servizioEl.remove();
+
+    const idx = state.serviziPersonalizzati.findIndex(s => s.id === id);
+    if (idx !== -1) state.serviziPersonalizzati.splice(idx, 1);
+
+    aggiornaValori();
+  }
+
   function abilitaProdotti() {
     const container = $('#container-prodotti');
     if (container) container.hidden = false;
@@ -258,13 +475,24 @@
     state.valori.distanza_km = state.distanzaKm;
     state.valori.prodotti = [];
     state.valori.accessori = [];
+    state.valori.accessori_modalita = [];
     for (let i = 1; i <= 4; i++) {
       const selProdotto = $(`#input-prodotto-${i}`);
+      const toggleAcc = $(`#toggle-accessorio-${i}`);
       const selAcc = $(`#input-accessorio-${i}`);
       const mod = selProdotto?.value || '';
-      const acc = selAcc?.value || '';
       state.valori.prodotti.push(mod);
-      state.valori.accessori.push(acc);
+      
+      if (toggleAcc?.checked && selAcc?.value) {
+        const acc = selAcc.value;
+        state.valori.accessori.push(acc);
+        const radioInstallato = $(`#accessorio-installato-${i}`);
+        const modalita = radioInstallato?.checked ? 'installato' : 'fornito';
+        state.valori.accessori_modalita.push(modalita);
+      } else {
+        state.valori.accessori.push('');
+        state.valori.accessori_modalita.push('');
+      }
     }
     const posti = $('#input-posti-auto');
     state.valori.numero_posti_auto = posti ? (parseInt(posti.value, 10) || 2) : 2;
@@ -281,6 +509,26 @@
     state.valori.costo_noleggio_scala    = scaActv ? calcoloCostoScala(state.valori.giorni_noleggio_scala) : null;
     state.valori.giorni_presenza_gru     = gruActv ? (parseInt($('#input-giorni-gru')?.value, 10) || 1) : 0;
     state.valori.costo_gru_trasporto     = gruActv ? getCostoGruPerDistanza(state.distanzaKm) : null;
+
+    state.valori.servizi_personalizzati = [];
+    state.serviziPersonalizzati.forEach(servizio => {
+      const descInput = $(`#servizio-desc-${servizio.id}`);
+      const costoInput = $(`#servizio-costo-${servizio.id}`);
+      const noteInput = $(`#servizio-note-${servizio.id}`);
+      
+      const desc = descInput?.value.trim() || '';
+      const costo = costoInput ? parseFloat(costoInput.value) || 0 : 0;
+      const note = noteInput?.value.trim() || '';
+      
+      if (desc || costo > 0) {
+        state.valori.servizi_personalizzati.push({
+          id: servizio.id,
+          descrizione: desc,
+          costo: costo,
+          note: note
+        });
+      }
+    });
   }
 
   function prodottoSelezionato(slot) {
@@ -361,7 +609,7 @@
     if (elMuletto) {
       if (mulActv) {
         const costo = calcoloCostoMuletto($('#input-giorni-muletto')?.value);
-        elMuletto.textContent = costo != null ? `${costo} €` : '—';
+        elMuletto.textContent = costo != null ? `€ ${costo}` : '—';
       } else {
         elMuletto.textContent = '—';
       }
@@ -371,7 +619,7 @@
     if (elScala) {
       if (scaActv) {
         const costo = calcoloCostoScala($('#input-giorni-scala')?.value);
-        elScala.textContent = costo != null ? `${costo} €` : '—';
+        elScala.textContent = costo != null ? `€ ${costo}` : '—';
       } else {
         elScala.textContent = '—';
       }
@@ -382,8 +630,12 @@
       if (gruActv) {
         const costoGru = getCostoGruPerDistanza(state.distanzaKm);
         const giorniGru = parseInt($('#input-giorni-gru')?.value, 10) || 1;
-        if (costoGru != null) elGru.textContent = `${costoGru} € (× ${giorniGru} giorni)`;
-        else elGru.textContent = '—';
+        if (costoGru != null) {
+          const costoTotale = costoGru * giorniGru;
+          elGru.textContent = `€ ${Math.round(costoTotale * 100) / 100}`;
+        } else {
+          elGru.textContent = '—';
+        }
       } else {
         elGru.textContent = '—';
       }
@@ -392,7 +644,6 @@
 
   function aggiornaRiepilogo() {
     aggiornaValori();
-    syncInputsToParametri();
     const out = $('#output-riepilogo');
     const sec = $('#riepilogo');
     if (!out || !sec) return;
@@ -431,7 +682,6 @@
       if (valDist) valDist.textContent = `${km} km`;
       abilitaProdotti();
       aggiornaParametriDaDistanza();
-      syncParametriToInputs();
       mostraNascondiDomande();
       checkSubmitFn();
     }
@@ -602,6 +852,37 @@
     }
   }
 
+  function bindControlliGiorni() {
+    document.addEventListener('click', (e) => {
+      if (e.target.matches('.btn-controllo')) {
+        const targetId = e.target.getAttribute('data-target');
+        const input = $(`#${targetId}`);
+        if (!input) return;
+        
+        const min = parseInt(input.getAttribute('min'), 10) || 1;
+        const max = parseInt(input.getAttribute('max'), 10) || 365;
+        let val = parseInt(input.value, 10) || min;
+        
+        if (e.target.classList.contains('btn-piu')) {
+          val = Math.min(val + 1, max);
+        } else if (e.target.classList.contains('btn-meno')) {
+          val = Math.max(val - 1, min);
+        }
+        
+        input.value = val;
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+    });
+  }
+
+  function bindServiziPersonalizzati() {
+    const btnAggiungi = $('#btn-aggiungi-servizio');
+    if (btnAggiungi) {
+      btnAggiungi.addEventListener('click', aggiungiServizioPersonalizzato);
+    }
+  }
+
   function bindForm() {
     const form = $('#form-calcolo');
     const btnInvia = $('#btn-invia');
@@ -618,6 +899,7 @@
         if (e.target.id === 'input-prodotto-1') aggiornaDopoModello(1);
       }
       if (e.target.matches('select[name^="accessorio_"]') || e.target.id === 'input-posti-auto') aggiornaValori();
+      if (e.target.matches('input[name^="accessorio_modalita_"]')) aggiornaValori();
       if (e.target.matches('#input-tecnici-interni, #input-presenza-interni, #input-giorni-muletto, #input-giorni-scala, #input-giorni-gru')) {
         aggiornaValori();
         aggiornaCampiCalcolati();
@@ -629,6 +911,13 @@
         if (dettagli) dettagli.hidden = !e.target.checked;
         aggiornaValori();
         aggiornaCampiCalcolati();
+      }
+      /* Toggle accessori */
+      if (e.target.matches('.accessorio-toggle')) {
+        const dettagliId = e.target.id.replace('toggle-', 'dettagli-');
+        const dettagli = document.getElementById(dettagliId);
+        if (dettagli) dettagli.hidden = !e.target.checked;
+        aggiornaValori();
       }
     });
     document.getElementById('form-calcolo')?.addEventListener('input', (e) => {
@@ -664,15 +953,6 @@
 
   function bindParametri() {
     initParametriFromDefaults();
-    syncParametriToInputs();
-    document.getElementById('panel-parametri')?.addEventListener('input', () => {
-      syncInputsToParametri();
-      aggiornaCampiCalcolati();
-    });
-    document.getElementById('panel-parametri')?.addEventListener('change', () => {
-      syncInputsToParametri();
-      aggiornaCampiCalcolati();
-    });
   }
 
   async function init() {
@@ -681,6 +961,8 @@
     buildContainerProdotti();
     abilitaProdotti();
     bindParametri();
+    bindControlliGiorni();
+    bindServiziPersonalizzati();
     bindIndirizzoUI();
     bindForm();
     mostraNascondiDomande();

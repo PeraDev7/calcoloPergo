@@ -1,151 +1,151 @@
 [
-    {
-        "DISTANZA": 50,
-        "COSTO_KM": 2,
-        "ORE_LAVORATE": 100
-    },
-    {
-        "DISTANZA": 100,
-        "COSTO_KM": 1.99,
-        "ORE_LAVORATE": 100
-    },
-    {
-        "DISTANZA": 150,
-        "COSTO_KM": 1.98,
-        "ORE_LAVORATE": 100
-    },
-    {
-        "DISTANZA": 200,
-        "COSTO_KM": 1.97,
-        "ORE_LAVORATE": 100
-    },
-    {
-        "DISTANZA": 250,
-        "COSTO_KM": 1.96,
-        "ORE_LAVORATE": 100
-    },
-    {
-        "DISTANZA": 300,
-        "COSTO_KM": 1.95,
-        "ORE_LAVORATE": 100
-    },
-    {
-        "DISTANZA": 350,
-        "COSTO_KM": 1.94,
-        "ORE_LAVORATE": 100
-    },
-    {
-        "DISTANZA": 400,
-        "COSTO_KM": 1.93,
-        "TRASFERTA GIORNO": 100,
-        "ORE_LAVORATE": 100
-    },
-    {
-        "DISTANZA": 450,
-        "COSTO_KM": 1.92,
-        "TRASFERTA GIORNO": 100,
-        "ORE_LAVORATE": 100
-    },
-    {
-        "DISTANZA": 500,
-        "COSTO_KM": 1.91,
-        "TRASFERTA GIORNO": 100,
-        "ORE_LAVORATE": 100
-    },
-    {
-        "DISTANZA": 550,
-        "COSTO_KM": 1.9,
-        "TRASFERTA GIORNO": 100,
-        "ORE_LAVORATE": 100
-    },
-    {
-        "DISTANZA": 600,
-        "COSTO_KM": 1.89,
-        "TRASFERTA GIORNO": 100,
-        "ORE_LAVORATE": 100
-    },
-    {
-        "DISTANZA": 650,
-        "COSTO_KM": 1.88,
-        "TRASFERTA GIORNO": 100,
-        "ORE_LAVORATE": 100
-    },
-    {
-        "DISTANZA": 700,
-        "COSTO_KM": 1.87,
-        "TRASFERTA GIORNO": 100,
-        "ORE_LAVORATE": 100
-    },
-    {
-        "DISTANZA": 750,
-        "COSTO_KM": 1.86,
-        "TRASFERTA GIORNO": 100,
-        "ORE_LAVORATE": 100
-    },
-    {
-        "DISTANZA": 800,
-        "COSTO_KM": 1.85,
-        "TRASFERTA GIORNO": 100,
-        "ORE_LAVORATE": 100
-    },
-    {
-        "DISTANZA": 850,
-        "COSTO_KM": 1.84,
-        "TRASFERTA GIORNO": 100,
-        "ORE_LAVORATE": 100
-    },
-    {
-        "DISTANZA": 900,
-        "COSTO_KM": 1.83,
-        "TRASFERTA GIORNO": 100,
-        "ORE_LAVORATE": 100
-    },
-    {
-        "DISTANZA": 950,
-        "COSTO_KM": 1.82,
-        "TRASFERTA GIORNO": 100,
-        "ORE_LAVORATE": 100
-    },
-    {
-        "DISTANZA": 1000,
-        "COSTO_KM": 1.81,
-        "TRASFERTA GIORNO": 100,
-        "ORE_LAVORATE": 100
-    },
-    {
-        "DISTANZA": 1050,
-        "COSTO_KM": 1.8,
-        "TRASFERTA GIORNO": 100,
-        "ORE_LAVORATE": 100
-    },
-    {
-        "DISTANZA": 1100,
-        "COSTO_KM": 1.79,
-        "TRASFERTA GIORNO": 100,
-        "ORE_LAVORATE": 100
-    },
-    {
-        "DISTANZA": 1150,
-        "COSTO_KM": 1.78,
-        "TRASFERTA GIORNO": 100,
-        "ORE_LAVORATE": 100
-    },
-    {
-        "DISTANZA": 1200,
-        "COSTO_KM": 1.77,
-        "TRASFERTA GIORNO": 100,
-        "ORE_LAVORATE": 100
-    },
-    {
-        "DISTANZA": 1250,
-        "COSTO_KM": 1.76,
-        "TRASFERTA GIORNO": 100,
-        "ORE_LAVORATE": 100
-    },
-    {
-        "DISTANZA": 1300,
-        "COSTO_KM": 1.75,
-        "TRASFERTA GIORNO": 100,
-        "ORE_LAVORATE": 100
-    }
+  {
+    "DISTANZA": 50,
+    "COSTO_KM": 2,
+    "ORE_LAVORATE": 100
+  },
+  {
+    "DISTANZA": 100,
+    "COSTO_KM": 1.99,
+    "ORE_LAVORATE": 100
+  },
+  {
+    "DISTANZA": 150,
+    "COSTO_KM": 1.98,
+    "ORE_LAVORATE": 100
+  },
+  {
+    "DISTANZA": 200,
+    "COSTO_KM": 1.97,
+    "ORE_LAVORATE": 100
+  },
+  {
+    "DISTANZA": 250,
+    "COSTO_KM": 1.96,
+    "ORE_LAVORATE": 100
+  },
+  {
+    "DISTANZA": 300,
+    "COSTO_KM": 1.95,
+    "ORE_LAVORATE": 100
+  },
+  {
+    "DISTANZA": 350,
+    "COSTO_KM": 1.94,
+    "ORE_LAVORATE": 100
+  },
+  {
+    "DISTANZA": 400,
+    "COSTO_KM": 1.93,
+    "TRASFERTA GIORNO": 100,
+    "ORE_LAVORATE": 100
+  },
+  {
+    "DISTANZA": 450,
+    "COSTO_KM": 1.92,
+    "TRASFERTA GIORNO": 100,
+    "ORE_LAVORATE": 100
+  },
+  {
+    "DISTANZA": 500,
+    "COSTO_KM": 1.91,
+    "TRASFERTA GIORNO": 100,
+    "ORE_LAVORATE": 100
+  },
+  {
+    "DISTANZA": 550,
+    "COSTO_KM": 1.9,
+    "TRASFERTA GIORNO": 100,
+    "ORE_LAVORATE": 100
+  },
+  {
+    "DISTANZA": 600,
+    "COSTO_KM": 1.89,
+    "TRASFERTA GIORNO": 100,
+    "ORE_LAVORATE": 100
+  },
+  {
+    "DISTANZA": 650,
+    "COSTO_KM": 1.88,
+    "TRASFERTA GIORNO": 100,
+    "ORE_LAVORATE": 100
+  },
+  {
+    "DISTANZA": 700,
+    "COSTO_KM": 1.87,
+    "TRASFERTA GIORNO": 100,
+    "ORE_LAVORATE": 100
+  },
+  {
+    "DISTANZA": 750,
+    "COSTO_KM": 1.86,
+    "TRASFERTA GIORNO": 100,
+    "ORE_LAVORATE": 100
+  },
+  {
+    "DISTANZA": 800,
+    "COSTO_KM": 1.85,
+    "TRASFERTA GIORNO": 100,
+    "ORE_LAVORATE": 100
+  },
+  {
+    "DISTANZA": 850,
+    "COSTO_KM": 1.84,
+    "TRASFERTA GIORNO": 100,
+    "ORE_LAVORATE": 100
+  },
+  {
+    "DISTANZA": 900,
+    "COSTO_KM": 1.83,
+    "TRASFERTA GIORNO": 100,
+    "ORE_LAVORATE": 100
+  },
+  {
+    "DISTANZA": 950,
+    "COSTO_KM": 1.82,
+    "TRASFERTA GIORNO": 100,
+    "ORE_LAVORATE": 100
+  },
+  {
+    "DISTANZA": 1000,
+    "COSTO_KM": 1.81,
+    "TRASFERTA GIORNO": 100,
+    "ORE_LAVORATE": 100
+  },
+  {
+    "DISTANZA": 1050,
+    "COSTO_KM": 1.8,
+    "TRASFERTA GIORNO": 100,
+    "ORE_LAVORATE": 100
+  },
+  {
+    "DISTANZA": 1100,
+    "COSTO_KM": 1.79,
+    "TRASFERTA GIORNO": 100,
+    "ORE_LAVORATE": 100
+  },
+  {
+    "DISTANZA": 1150,
+    "COSTO_KM": 1.78,
+    "TRASFERTA GIORNO": 100,
+    "ORE_LAVORATE": 100
+  },
+  {
+    "DISTANZA": 1200,
+    "COSTO_KM": 1.77,
+    "TRASFERTA GIORNO": 100,
+    "ORE_LAVORATE": 100
+  },
+  {
+    "DISTANZA": 1250,
+    "COSTO_KM": 1.76,
+    "TRASFERTA GIORNO": 100,
+    "ORE_LAVORATE": 100
+  },
+  {
+    "DISTANZA": 1300,
+    "COSTO_KM": 1.75,
+    "TRASFERTA GIORNO": 100,
+    "ORE_LAVORATE": 100
+  }
 ]
