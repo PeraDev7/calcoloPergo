@@ -2,5 +2,24 @@
   "coordinate_partenza": {
     "lat": 45.41667,
     "lon": 11.03333
+  },
+  "parametri_trasporto_merci": {
+    "nostro_mezzo_eur_km_base": 0.05,
+    "nostro_mezzo_eur_km_pedaggio": 0.06,
+    "nostro_mezzo_eur_km_carburante": 0.08,
+    "nostro_mezzo_eur_km_usura": 0.12,
+    "bilico_eur_km": 2.2,
+    "camion_gru_eur_km": 2
+  },
+  "sicurezza_percentuale_auto": 5,
+  "parametri_installazione": {
+    "km_soglia_trasferta_interna": 150,
+    "velocita_media_trasferta_kmh": 60,
+    "ora_partenza_azienda": 7,
+    "ora_ritorno_azienda": 18,
+    "costo_orario_interno": 35,
+    "costo_orario_esterno": 40,
+    "rimborso_giornaliero_esterno": 25,
+    "costo_extra_giorno_interno_trasferta_lunga": 80
   }
 }

@@ -14,7 +14,7 @@ app.use(express.static(__dirname));
 app.post('/api/salva/:filename', async (req, res) => {
   try {
     const { filename } = req.params;
-    const allowedFiles = ['costanti.json', 'prodotti.json', 'acessori.json', 'trasporti.json', 'gru.json'];
+    const allowedFiles = ['costanti.json', 'prodotti.json', 'acessori.json', 'trasporti.json', 'gru.json', 'trasferta.json'];
     
     if (!allowedFiles.includes(filename)) {
       return res.status(400).json({ error: 'File non consentito' });

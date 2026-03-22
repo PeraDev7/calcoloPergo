@@ -1,0 +1,30 @@
+{
+  "giornata_lavorativa": {
+    "ora_inizio": 7.5,
+    "ora_fine": 17.5,
+    "pausa_pranzo_ore": 1,
+    "pausa_ora_inizio": 12,
+    "pausa_ora_fine": 13
+  },
+  "premio_trasferta_euro_per_tecnico_per_giorno": 50,
+  "ore_minime_cantiere_stesso_giorno_trasferta": 3,
+  "ora_massima_rientro_casa": 18,
+  "rientro_weekend_default": true,
+  "premio_include_giorni_viaggio_default": true,
+  "mezzo_aziendale": {
+    "eur_litro_gasolio": 1.75,
+    "litri_100km": 8,
+    "usura_euro_km": 0.12,
+    "pedaggio_euro_km": 0.06
+  },
+  "treno": {
+    "costo_medio_andata_ritorno_per_persona": 90,
+    "taxi_stazione_cantiere_per_tratta": 45
+  },
+  "aereo": {
+    "costo_medio_andata_ritorno_per_persona": 220,
+    "taxi_aeroporto_cantiere_per_tratta": 55
+  },
+  "hotel_euro_per_notte": 75,
+  "costo_extra_generico_default": 0
+}

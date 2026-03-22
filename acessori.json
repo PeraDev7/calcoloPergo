@@ -1,26 +1,38 @@
 [
   {
     "nome": "Pannelli fotovoltaici",
-    "nome_prodotti": "PF"
+    "nome_prodotti": "PF",
+    "icona": "☀️",
+    "descrizione": "Modulo fotovoltaico integrabile sulla struttura."
   },
   {
     "nome": "Guarnizioni",
-    "nome_prodotti": "GUARNIZIONI"
+    "nome_prodotti": "GUARNIZIONI",
+    "icona": "🔧",
+    "descrizione": "Guarnizioni per tenuta e protezione dagli agenti atmosferici."
   },
   {
     "nome": "Zavorre",
-    "nome_prodotti": "ZAVORRE"
+    "nome_prodotti": "ZAVORRE",
+    "icona": "⚖️",
+    "descrizione": "Zavorre per stabilizzazione e carico strutturale."
   },
   {
     "nome": "Kit LED",
-    "nome_prodotti": "KIT_LED"
+    "nome_prodotti": "KIT_LED",
+    "icona": "💡",
+    "descrizione": "Illuminazione LED per area coperta."
   },
   {
     "nome": "Telo tensionato",
-    "nome_prodotti": "TELO_TENSIONATO"
+    "nome_prodotti": "TELO_TENSIONATO",
+    "icona": "🪟",
+    "descrizione": "Copertura in telo tensionato."
   },
   {
     "nome": "Panelli coibentati",
-    "nome_prodotti": "PANNELLI_COIBENTATI"
+    "nome_prodotti": "PANNELLI_COIBENTATI",
+    "icona": "🧱",
+    "descrizione": "Pannelli coibentati per chiusura o copertura."
   }
 ]

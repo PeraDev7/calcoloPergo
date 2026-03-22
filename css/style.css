@@ -330,6 +330,144 @@ body {
   animation: slideDown 0.2s ease-out;
 }
 
+.accessorio-item-actions {
+  padding: 0;
+}
+
+.btn-accessori-apri {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.85rem 1rem;
+  cursor: pointer;
+  background: linear-gradient(135deg, #f0f5eb 0%, #e5f0dc 100%);
+  font-weight: 600;
+  font-size: 0.95rem;
+  border: none;
+  font-family: inherit;
+  color: var(--primary);
+  border-radius: 8px 8px 0 0;
+  transition: background 0.2s;
+}
+
+.btn-accessori-apri:hover {
+  background: linear-gradient(135deg, #e5f0dc 0%, #d9ebc9 100%);
+}
+
+.accessorio-riepilogo {
+  margin: 0;
+  padding: 0.75rem 1rem;
+  font-size: 0.88rem;
+  line-height: 1.45;
+  color: var(--text);
+  background: #fafaf8;
+  border-top: 1px solid rgba(45, 80, 22, .15);
+  border-radius: 0 0 8px 8px;
+}
+
+.accessorio-riepilogo-vuoto {
+  color: var(--secondary);
+  font-style: italic;
+}
+
+#modal-accessori {
+  z-index: 1001;
+}
+
+.modal-accessori-panel {
+  max-width: 640px;
+}
+
+.modal-accessori-sottotitolo {
+  margin: 0 0 1rem;
+  font-size: 0.9rem;
+  color: var(--secondary);
+  line-height: 1.4;
+}
+
+.modal-accessori-lista {
+  max-height: min(52vh, 440px);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  padding-right: 0.25rem;
+}
+
+.modal-accessorio-riga {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.75rem 0.85rem;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  background: var(--card);
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.modal-accessorio-riga--attivo {
+  border-color: rgba(45, 80, 22, 0.4);
+  background: #fafaf8;
+}
+
+.modal-accessorio-check {
+  flex: 0 0 auto;
+  padding-top: 0.2rem;
+}
+
+.modal-accessorio-check input[type="checkbox"] {
+  width: 1.15rem;
+  height: 1.15rem;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+
+.modal-accessorio-icon {
+  flex: 0 0 auto;
+  font-size: 1.65rem;
+  line-height: 1;
+}
+
+.modal-accessorio-icon--empty {
+  min-width: 1.65rem;
+  min-height: 1.65rem;
+}
+
+.modal-accessorio-testo {
+  flex: 1 1 160px;
+  min-width: 0;
+}
+
+.modal-accessorio-titolo {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--text);
+}
+
+.modal-accessorio-desc {
+  font-size: 0.82rem;
+  color: var(--secondary);
+  margin-top: 0.2rem;
+  line-height: 1.35;
+}
+
+.modal-accessorio-modalita {
+  flex: 1 1 220px;
+  min-width: min(100%, 220px);
+}
+
+.modal-accessorio-radio.radio-group-inline {
+  margin-top: 0;
+}
+
+.modal-accessorio-radio .radio-label-inline {
+  font-size: 0.78rem;
+  padding: 0.4rem 0.55rem;
+}
+
 .radio-group-inline {
   display: flex;
   gap: 0.75rem;
@@ -413,6 +551,286 @@ body {
 
 .tecnici-computed-row .valore-calcolato {
   font-size: 1rem;
+}
+
+/* ── Ore installazione e stima manodopera ───────────────── */
+.sezione-installazione {
+  margin-top: 1.25rem;
+  padding: 1rem 1rem 1.1rem;
+  border: 2px solid rgba(45, 80, 22, 0.25);
+  border-radius: 10px;
+  background: linear-gradient(180deg, #fafcf8 0%, #f5f8f0 100%);
+}
+
+.sezione-installazione-titolo {
+  margin: 0 0 0.5rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.sezione-installazione-intro {
+  margin: 0 0 1rem;
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+
+.installazione-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.75rem 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.installazione-grid-stima {
+  margin-top: 0.5rem;
+}
+
+.valore-ore-grande {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.lista-dettaglio-ore {
+  margin: 0 0 1rem;
+  padding-left: 1.1rem;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  color: var(--text);
+}
+
+.lista-dettaglio-ore li {
+  margin-bottom: 0.35rem;
+}
+
+.installazione-stima {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px dashed var(--border);
+}
+
+.installazione-stima-titolo {
+  margin: 0 0 0.35rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.installazione-totale-manodopera {
+  grid-column: 1 / -1;
+}
+
+.installazione-ore-nette {
+  font-size: 0.85rem;
+  margin: 0.5rem 0 0.75rem;
+  padding: 0.5rem 0.65rem;
+  background: rgba(45, 80, 22, 0.06);
+  border-radius: 6px;
+}
+
+.sezione-sottotitolo {
+  margin: 1rem 0 0.5rem;
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.blocco-trasporto-merci {
+  margin-bottom: 1.25rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--border-color, #ddd);
+}
+
+.trasporto-merci-radios {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin: 0.5rem 0 0.75rem;
+}
+
+.trasporto-merci-radio-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+.blocco-totale-installazione {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background: var(--panel-bg, #f7f7f7);
+  border-radius: 8px;
+  border: 1px solid var(--border-color, #ddd);
+}
+
+.lista-costi-installazione {
+  margin: 0.5rem 0 1rem;
+  padding-left: 1.25rem;
+  line-height: 1.6;
+}
+
+.lista-costi-subtot {
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px dashed var(--border-color, #ccc);
+}
+
+.sicurezza-blocco {
+  margin: 1rem 0;
+}
+
+.sicurezza-check-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  cursor: pointer;
+  line-height: 1.4;
+}
+
+.sicurezza-check-label input {
+  margin-top: 0.2rem;
+  flex-shrink: 0;
+}
+
+.sicurezza-importo-riga {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.btn-sicurezza-auto {
+  white-space: nowrap;
+}
+
+.totale-finale-installazione {
+  margin: 1rem 0 0.25rem;
+  font-size: 1.1rem;
+}
+
+.avviso-trasporto {
+  color: #8a4b00;
+}
+
+.blocco-trasferta-utente,
+.blocco-trasferta-esito {
+  margin-top: 1rem;
+  padding: 0.85rem 1rem;
+  border-radius: 8px;
+  border: 1px solid rgba(45, 80, 22, 0.25);
+  background: #fff;
+}
+
+.trasferta-sottotitolo {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.trasferta-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.75rem 1rem;
+  align-items: start;
+}
+
+.trasferta-checks {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.trasferta-check-label {
+  font-size: 0.88rem;
+  font-weight: 500;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+.trasferta-check-label input {
+  margin-top: 0.15rem;
+  accent-color: var(--primary);
+}
+
+.lista-trasferta-esito {
+  margin: 0.35rem 0 0;
+  padding-left: 1.1rem;
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.lista-trasferta-esito .trasferta-tot-parz {
+  margin-top: 0.35rem;
+  list-style: none;
+  margin-left: -1.1rem;
+}
+
+.trasferta-piano-wrapper {
+  margin-top: 1rem;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  max-width: 100%;
+}
+
+.trasferta-piano-titolo {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.trasferta-tabella-giorni {
+  width: 100%;
+  min-width: 520px;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  margin-bottom: 0.35rem;
+}
+
+.trasferta-tabella-giorni th,
+.trasferta-tabella-giorni td {
+  border: 1px solid var(--border-color, #c8c8c8);
+  padding: 0.4rem 0.5rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.trasferta-tabella-giorni thead th {
+  background: var(--table-head-bg, #f0f0f0);
+  font-weight: 600;
+}
+
+.trasferta-tabella-giorni tbody tr:nth-child(even) {
+  background: var(--table-stripe, #fafafa);
+}
+
+.trasferta-cell-nota {
+  max-width: 22rem;
+  word-break: break-word;
+}
+
+.trasferta-riga-warning td {
+  background: #fff4e5;
+  color: #663c00;
+  font-weight: 500;
+}
+
+.trasferta-piano-hint {
+  margin-top: 0.25rem;
+}
+
+.trasferta-note-dinamiche {
+  margin: 0.65rem 0 0;
+  font-size: 0.82rem;
+}
+
+@media (max-width: 640px) {
+  .installazione-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* ── Noleggio toggle items ──────────────────────────────── */

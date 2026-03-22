@@ -9,10 +9,14 @@
     trasporti: [],
     accessori: [],
     gru: [],
+    /** Parametri trasferta (trasferta.json): giornata, premio, costi mezzo/treno/aereo, hotel */
+    trasfertaConfig: null,
     valori: {},
     distanzaKm: null,
     coordCantiere: null,
     serviziPersonalizzati: [],
+    /** Per ogni slot 1–4: array di { codice: nome_prodotti, modalita: 'fornito'|'installato' } */
+    accessoriSelezioni: { 1: [], 2: [], 3: [], 4: [] },
     parametri: {
       lat_partenza: null,
       lon_partenza: null,
@@ -23,10 +27,20 @@
       scala_giorno_extra: 100,
       costo_km_trasporto: null,
       costo_km_gru: null,
+      km_soglia_trasferta_interna: 150,
+      velocita_media_trasferta_kmh: 60,
+      ora_partenza_azienda: 7,
+      ora_ritorno_azienda: 18,
+      costo_orario_interno: 35,
+      costo_orario_esterno: 40,
+      rimborso_giornaliero_esterno: 25,
+      costo_extra_giorno_interno_trasferta_lunga: 80,
     },
   };
   let checkSubmitFn = () => {};
   let serviziPersonalizzatiCounter = 0;
+  let modalAccessoriSlot = null;
+  let modalAccessoriDraft = null;
 
   window.APP_STATE = state;
 
@@ -41,12 +55,13 @@
 
   async function initData() {
     try {
-      [state.costanti, state.prodotti, state.trasporti, state.accessori, state.gru] = await Promise.all([
+      [state.costanti, state.prodotti, state.trasporti, state.accessori, state.gru, state.trasfertaConfig] = await Promise.all([
         loadJson('costanti.json'),
         loadJson('prodotti.json'),
         loadJson('trasporti.json'),
         loadJson('acessori.json').catch(() => []),
         loadJson('gru.json').catch(() => []),
+        loadJson('trasferta.json').catch(() => null),
       ]);
     } catch (e) {
       console.error(e);
@@ -100,6 +115,38 @@
     const firstGru = state.gru?.length && state.gru[0];
     state.parametri.costo_km_trasporto = firstTrasporti?.COSTO_KM != null ? firstTrasporti.COSTO_KM : null;
     state.parametri.costo_km_gru = firstGru?.COSTO_KM != null ? firstGru.COSTO_KM : null;
+
+    const pi = state.costanti?.parametri_installazione;
+    const defInst = {
+      km_soglia_trasferta_interna: 150,
+      velocita_media_trasferta_kmh: 60,
+      ora_partenza_azienda: 7,
+      ora_ritorno_azienda: 18,
+      costo_orario_interno: 35,
+      costo_orario_esterno: 40,
+      rimborso_giornaliero_esterno: 25,
+      costo_extra_giorno_interno_trasferta_lunga: 80,
+    };
+    Object.keys(defInst).forEach((k) => {
+      const v = pi && pi[k] != null && pi[k] !== '' ? Number(pi[k]) : null;
+      state.parametri[k] = v != null && !Number.isNaN(v) ? v : defInst[k];
+    });
+
+    const ptm = state.costanti?.parametri_trasporto_merci || {};
+    const defTrm = {
+      nostro_mezzo_eur_km_base: 0.05,
+      nostro_mezzo_eur_km_pedaggio: 0.06,
+      nostro_mezzo_eur_km_carburante: 0.08,
+      nostro_mezzo_eur_km_usura: 0.12,
+      bilico_eur_km: 2.2,
+      camion_gru_eur_km: 2,
+    };
+    Object.keys(defTrm).forEach((k) => {
+      const v = ptm[k] != null && ptm[k] !== '' ? Number(ptm[k]) : null;
+      state.parametri[k] = v != null && !Number.isNaN(v) ? v : defTrm[k];
+    });
+    const sic = state.costanti?.sicurezza_percentuale_auto;
+    state.parametri.sicurezza_percentuale_auto = sic != null && sic !== '' && !Number.isNaN(Number(sic)) ? Number(sic) : 5;
   }
 
   /** Aggiorna costo_km_trasporto e costo_km_gru dalla fascia corrispondente alla distanza (da JSON) */
@@ -139,22 +186,191 @@
     return frag;
   }
 
-  function buildAccessoriSelect() {
-    const frag = document.createDocumentFragment();
-    const opt0 = document.createElement('option');
-    opt0.value = '';
-    opt0.textContent = 'Nessuno';
-    frag.appendChild(opt0);
-    (state.accessori || []).forEach((acc) => {
-      const nome = acc.nome;
-      const nomeProdotti = acc.nome_prodotti;
-      if (!nome || !nomeProdotti) return;
-      const opt = document.createElement('option');
-      opt.value = nomeProdotti;
-      opt.textContent = nome;
-      frag.appendChild(opt);
+  function getAccessorioMeta(codice) {
+    return (state.accessori || []).find((a) => a.nome_prodotti === codice) || null;
+  }
+
+  function aggiornaRiepilogoAccessoriSlot(slot) {
+    const el = $(`#accessorio-riepilogo-${slot}`);
+    if (!el) return;
+    const list = state.accessoriSelezioni[slot] || [];
+    if (!list.length) {
+      el.textContent = 'Nessun accessorio selezionato';
+      el.classList.add('accessorio-riepilogo-vuoto');
+      return;
+    }
+    el.classList.remove('accessorio-riepilogo-vuoto');
+    el.textContent = list
+      .map((x) => {
+        const meta = getAccessorioMeta(x.codice);
+        const nome = meta?.nome || x.codice;
+        const modLabel = x.modalita === 'installato' ? 'fornito e installato' : 'solo fornito';
+        return `${nome} (${modLabel})`;
+      })
+      .join(' · ');
+  }
+
+  function renderModalAccessoriLista() {
+    const container = $('#modal-accessori-lista');
+    if (!container) return;
+    container.innerHTML = '';
+    const catalog = state.accessori || [];
+    if (!catalog.length) {
+      const p = document.createElement('p');
+      p.className = 'hint';
+      p.textContent = 'Nessun accessorio configurato in acessori.json.';
+      container.appendChild(p);
+      return;
+    }
+
+    catalog.forEach((acc) => {
+      const codice = acc.nome_prodotti;
+      if (!codice) return;
+      const nome = acc.nome || codice;
+      const desc = acc.descrizione != null ? String(acc.descrizione).trim() : '';
+      const icona = acc.icona != null ? String(acc.icona).trim() : '';
+
+      const draft = modalAccessoriDraft || [];
+      const sel = draft.find((d) => d.codice === codice);
+      const checked = !!sel;
+      const modalita = sel?.modalita === 'installato' ? 'installato' : 'fornito';
+
+      const row = document.createElement('div');
+      row.className = 'modal-accessorio-riga' + (checked ? ' modal-accessorio-riga--attivo' : '');
+
+      const checkCol = document.createElement('div');
+      checkCol.className = 'modal-accessorio-check';
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.id = `modal-acc-${modalAccessoriSlot}-${codice}`;
+      cb.checked = checked;
+      cb.dataset.codice = codice;
+      checkCol.appendChild(cb);
+
+      const iconWrap = document.createElement('div');
+      iconWrap.className = 'modal-accessorio-icon';
+      iconWrap.setAttribute('aria-hidden', 'true');
+      if (icona) {
+        iconWrap.textContent = icona;
+      } else {
+        iconWrap.classList.add('modal-accessorio-icon--empty');
+      }
+
+      const textCol = document.createElement('div');
+      textCol.className = 'modal-accessorio-testo';
+      const titolo = document.createElement('div');
+      titolo.className = 'modal-accessorio-titolo';
+      titolo.textContent = nome;
+      textCol.appendChild(titolo);
+      if (desc) {
+        const sotto = document.createElement('div');
+        sotto.className = 'modal-accessorio-desc';
+        sotto.textContent = desc;
+        textCol.appendChild(sotto);
+      }
+
+      const modCol = document.createElement('div');
+      modCol.className = 'modal-accessorio-modalita';
+      if (!checked) modCol.hidden = true;
+
+      const rg = document.createElement('div');
+      rg.className = 'radio-group-inline modal-accessorio-radio';
+
+      const labF = document.createElement('label');
+      labF.className = 'radio-label-inline';
+      const rF = document.createElement('input');
+      rF.type = 'radio';
+      rF.name = `modalita-acc-${modalAccessoriSlot}-${codice}`;
+      rF.value = 'fornito';
+      rF.dataset.codice = codice;
+      rF.checked = modalita === 'fornito';
+      labF.appendChild(rF);
+      labF.appendChild(document.createTextNode(' Solo fornito'));
+
+      const labI = document.createElement('label');
+      labI.className = 'radio-label-inline';
+      const rI = document.createElement('input');
+      rI.type = 'radio';
+      rI.name = `modalita-acc-${modalAccessoriSlot}-${codice}`;
+      rI.value = 'installato';
+      rI.dataset.codice = codice;
+      rI.checked = modalita === 'installato';
+      labI.appendChild(rI);
+      labI.appendChild(document.createTextNode(' Fornito e installato'));
+
+      rg.appendChild(labF);
+      rg.appendChild(labI);
+      modCol.appendChild(rg);
+
+      row.appendChild(checkCol);
+      row.appendChild(iconWrap);
+      row.appendChild(textCol);
+      row.appendChild(modCol);
+      container.appendChild(row);
     });
-    return frag;
+  }
+
+  function apriModalAccessori(slot) {
+    modalAccessoriSlot = slot;
+    const cur = state.accessoriSelezioni[slot] || [];
+    modalAccessoriDraft = JSON.parse(JSON.stringify(cur));
+    const sub = $('#modal-accessori-sottotitolo');
+    if (sub) sub.textContent = `Prodotto ${slot}: seleziona uno o più accessori e la modalità per ciascuno.`;
+    renderModalAccessoriLista();
+    const modal = $('#modal-accessori');
+    if (modal) modal.hidden = false;
+  }
+
+  function chiudiModalAccessori(conferma) {
+    if (conferma && modalAccessoriSlot != null && modalAccessoriDraft) {
+      state.accessoriSelezioni[modalAccessoriSlot] = JSON.parse(JSON.stringify(modalAccessoriDraft));
+      aggiornaRiepilogoAccessoriSlot(modalAccessoriSlot);
+      aggiornaValori();
+      aggiornaCampiCalcolati();
+    }
+    const modal = $('#modal-accessori');
+    if (modal) modal.hidden = true;
+    modalAccessoriSlot = null;
+    modalAccessoriDraft = null;
+  }
+
+  function bindModalAccessori() {
+    const lista = $('#modal-accessori-lista');
+    if (lista) {
+      lista.addEventListener('change', (e) => {
+        const t = e.target;
+        if (!modalAccessoriDraft || modalAccessoriSlot == null) return;
+        const codice = t.dataset?.codice;
+        if (!codice) return;
+
+        if (t.matches('input[type="checkbox"]')) {
+          if (t.checked) {
+            if (!modalAccessoriDraft.find((x) => x.codice === codice)) {
+              modalAccessoriDraft.push({ codice, modalita: 'fornito' });
+            }
+          } else {
+            modalAccessoriDraft = modalAccessoriDraft.filter((x) => x.codice !== codice);
+          }
+          renderModalAccessoriLista();
+          return;
+        }
+        if (t.matches('input[type="radio"]')) {
+          const item = modalAccessoriDraft.find((x) => x.codice === codice);
+          if (item) item.modalita = t.value === 'installato' ? 'installato' : 'fornito';
+        }
+      });
+    }
+
+    $('#btn-conferma-accessori')?.addEventListener('click', () => chiudiModalAccessori(true));
+    $('#btn-annulla-accessori')?.addEventListener('click', () => chiudiModalAccessori(false));
+    $('#btn-chiudi-modal-accessori')?.addEventListener('click', () => chiudiModalAccessori(false));
+    $('#modal-accessori-overlay')?.addEventListener('click', () => chiudiModalAccessori(false));
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key !== 'Escape') return;
+      const m = $('#modal-accessori');
+      if (m && !m.hidden) chiudiModalAccessori(false);
+    });
   }
 
   function buildContainerProdotti() {
@@ -164,6 +380,7 @@
     if (!container) return;
 
     container.innerHTML = '';
+    state.accessoriSelezioni = { 1: [], 2: [], 3: [], 4: [] };
     for (let i = 1; i <= n; i++) {
       const obbligatorio = i === 1 && schema?.primoObbligatorio;
       const slot = document.createElement('div');
@@ -225,100 +442,28 @@
 
       const accessorioItem = document.createElement('div');
       accessorioItem.className = 'accessorio-item';
-      
-      const accessorioToggleLabel = document.createElement('label');
-      accessorioToggleLabel.className = 'accessorio-toggle-label';
-      accessorioToggleLabel.setAttribute('for', `toggle-accessorio-${i}`);
-      
-      const toggleCheckbox = document.createElement('input');
-      toggleCheckbox.type = 'checkbox';
-      toggleCheckbox.className = 'accessorio-toggle';
-      toggleCheckbox.id = `toggle-accessorio-${i}`;
-      toggleCheckbox.name = `attivo_accessorio_${i}`;
-      
-      const toggleSwitch = document.createElement('span');
-      toggleSwitch.className = 'toggle-switch';
-      toggleSwitch.setAttribute('aria-hidden', 'true');
-      
-      const toggleTesto = document.createElement('span');
-      toggleTesto.className = 'accessorio-toggle-testo';
-      toggleTesto.textContent = 'Aggiungi accessorio';
-      
-      accessorioToggleLabel.appendChild(toggleCheckbox);
-      accessorioToggleLabel.appendChild(toggleSwitch);
-      accessorioToggleLabel.appendChild(toggleTesto);
-      accessorioItem.appendChild(accessorioToggleLabel);
-      
-      const accessorioDettagli = document.createElement('div');
-      accessorioDettagli.className = 'accessorio-dettagli';
-      accessorioDettagli.id = `dettagli-accessorio-${i}`;
-      accessorioDettagli.hidden = true;
-      
-      const rowAccessorio = document.createElement('div');
-      rowAccessorio.className = 'domanda';
-      const labelAcc = document.createElement('label');
-      labelAcc.setAttribute('for', `input-accessorio-${i}`);
-      labelAcc.textContent = 'Seleziona accessorio';
-      const selectAcc = document.createElement('select');
-      selectAcc.id = `input-accessorio-${i}`;
-      selectAcc.name = `accessorio_${i}`;
-      selectAcc.appendChild(buildAccessoriSelect());
-      rowAccessorio.appendChild(labelAcc);
-      rowAccessorio.appendChild(selectAcc);
-      accessorioDettagli.appendChild(rowAccessorio);
 
-      const rowAccessorioOpzioni = document.createElement('div');
-      rowAccessorioOpzioni.className = 'domanda';
-      
-      const labelOpzioni = document.createElement('label');
-      labelOpzioni.textContent = 'Modalità';
-      
-      const radioGroup = document.createElement('div');
-      radioGroup.className = 'radio-group-inline';
-      
-      const radioFornito = document.createElement('label');
-      radioFornito.className = 'radio-label-inline';
-      const inputFornito = document.createElement('input');
-      inputFornito.type = 'radio';
-      inputFornito.name = `accessorio_modalita_${i}`;
-      inputFornito.value = 'fornito';
-      inputFornito.id = `accessorio-fornito-${i}`;
-      inputFornito.checked = true;
-      radioFornito.appendChild(inputFornito);
-      radioFornito.appendChild(document.createTextNode(' Solo fornito'));
-      
-      const radioInstallato = document.createElement('label');
-      radioInstallato.className = 'radio-label-inline';
-      const inputInstallato = document.createElement('input');
-      inputInstallato.type = 'radio';
-      inputInstallato.name = `accessorio_modalita_${i}`;
-      inputInstallato.value = 'installato';
-      inputInstallato.id = `accessorio-installato-${i}`;
-      radioInstallato.appendChild(inputInstallato);
-      radioInstallato.appendChild(document.createTextNode(' Fornito e installato'));
-      
-      radioGroup.appendChild(radioFornito);
-      radioGroup.appendChild(radioInstallato);
-      
-      rowAccessorioOpzioni.appendChild(labelOpzioni);
-      rowAccessorioOpzioni.appendChild(radioGroup);
-      accessorioDettagli.appendChild(rowAccessorioOpzioni);
-      
-      accessorioItem.appendChild(accessorioDettagli);
+      const accessorioActions = document.createElement('div');
+      accessorioActions.className = 'accessorio-item-actions';
+
+      const btnAccessori = document.createElement('button');
+      btnAccessori.type = 'button';
+      btnAccessori.className = 'btn-accessori-apri';
+      btnAccessori.id = `btn-accessori-${i}`;
+      btnAccessori.setAttribute('data-slot', String(i));
+      btnAccessori.textContent = 'Aggiungi accessorio';
+
+      const riepilogoAcc = document.createElement('p');
+      riepilogoAcc.className = 'accessorio-riepilogo accessorio-riepilogo-vuoto';
+      riepilogoAcc.id = `accessorio-riepilogo-${i}`;
+      riepilogoAcc.textContent = 'Nessun accessorio selezionato';
+
+      accessorioActions.appendChild(btnAccessori);
+      accessorioItem.appendChild(accessorioActions);
+      accessorioItem.appendChild(riepilogoAcc);
       slot.appendChild(accessorioItem);
 
-      toggleCheckbox.addEventListener('change', () => {
-        accessorioDettagli.hidden = !toggleCheckbox.checked;
-        if (!toggleCheckbox.checked) {
-          selectAcc.value = '';
-          inputFornito.checked = true;
-        }
-        aggiornaValori();
-      });
-
-      selectAcc.addEventListener('change', () => {
-        aggiornaValori();
-      });
+      btnAccessori.addEventListener('click', () => apriModalAccessori(i));
 
       container.appendChild(slot);
     }
@@ -345,18 +490,9 @@
     if (!slotEl) return;
     
     const selectProdotto = $(`#input-prodotto-${slot}`);
-    const toggleAccessorio = $(`#toggle-accessorio-${slot}`);
-    const selectAccessorio = $(`#input-accessorio-${slot}`);
-    
     if (selectProdotto) selectProdotto.value = '';
-    if (toggleAccessorio) toggleAccessorio.checked = false;
-    if (selectAccessorio) selectAccessorio.value = '';
-    
-    const dettagliAccessorio = $(`#dettagli-accessorio-${slot}`);
-    if (dettagliAccessorio) dettagliAccessorio.hidden = true;
-    
-    const radioFornito = $(`#accessorio-fornito-${slot}`);
-    if (radioFornito) radioFornito.checked = true;
+    state.accessoriSelezioni[slot] = [];
+    aggiornaRiepilogoAccessoriSlot(slot);
     
     slotEl.hidden = true;
     
@@ -475,24 +611,14 @@
     state.valori.distanza_km = state.distanzaKm;
     state.valori.prodotti = [];
     state.valori.accessori = [];
-    state.valori.accessori_modalita = [];
     for (let i = 1; i <= 4; i++) {
       const selProdotto = $(`#input-prodotto-${i}`);
-      const toggleAcc = $(`#toggle-accessorio-${i}`);
-      const selAcc = $(`#input-accessorio-${i}`);
       const mod = selProdotto?.value || '';
       state.valori.prodotti.push(mod);
-      
-      if (toggleAcc?.checked && selAcc?.value) {
-        const acc = selAcc.value;
-        state.valori.accessori.push(acc);
-        const radioInstallato = $(`#accessorio-installato-${i}`);
-        const modalita = radioInstallato?.checked ? 'installato' : 'fornito';
-        state.valori.accessori_modalita.push(modalita);
-      } else {
-        state.valori.accessori.push('');
-        state.valori.accessori_modalita.push('');
-      }
+      const lista = state.accessoriSelezioni[i] || [];
+      state.valori.accessori.push(
+        lista.map((x) => ({ codice: x.codice, modalita: x.modalita === 'installato' ? 'installato' : 'fornito' }))
+      );
     }
     const posti = $('#input-posti-auto');
     state.valori.numero_posti_auto = posti ? (parseInt(posti.value, 10) || 2) : 2;
@@ -529,6 +655,10 @@
         });
       }
     });
+
+    state.valori.sicurezza_inclusa = $('#sicurezza-includi')?.checked === true;
+    state.valori.sicurezza_importo_euro = Math.max(0, parseFloat($('#sicurezza-importo')?.value) || 0);
+    state.valori.modalita_trasporto_merci = document.querySelector('input[name="trasporto_modalita_merci"]:checked')?.value || 'nostro_mezzo';
   }
 
   function prodottoSelezionato(slot) {
@@ -538,12 +668,524 @@
     return state.prodotti.find((p) => p.MODELLO_STRUTTURA === mod) || null;
   }
 
+  /** Ore struttura da ORE_INSTALLAZIONE_{posti}PA (posti 1–20). */
+  function getOreStrutturaProdotto(prodotto, posti) {
+    const n = Math.min(Math.max(parseInt(String(posti), 10) || 1, 1), 20);
+    const key = `ORE_INSTALLAZIONE_${n}PA`;
+    let v = prodotto[key];
+    if (v == null || Number.isNaN(Number(v))) v = prodotto.ORE_INSTALLAZIONE_1PA;
+    return Number(v) || 0;
+  }
+
+  /** Ore accessorio da ORE_INSTALLAZIONE_{codice} sul prodotto. */
+  function getOreAccessorioProdotto(prodotto, codice) {
+    const key = `ORE_INSTALLAZIONE_${codice}`;
+    const v = prodotto[key];
+    return v != null && !Number.isNaN(Number(v)) ? Number(v) : 0;
+  }
+
+  function calcolaOreInstallazioneCantiere() {
+    const posti = Math.min(Math.max(parseInt($('#input-posti-auto')?.value, 10) || 2, 1), 20);
+    let totale = 0;
+    const dettagli = [];
+
+    for (let i = 1; i <= 4; i++) {
+      const mod = $(`#input-prodotto-${i}`)?.value || '';
+      if (!mod) continue;
+      const p = state.prodotti.find((x) => x.MODELLO_STRUTTURA === mod);
+      if (!p) continue;
+
+      const oreStruttura = getOreStrutturaProdotto(p, posti);
+      let oreAcc = 0;
+      const accDet = [];
+      const lista = state.accessoriSelezioni[i] || [];
+      for (const a of lista) {
+        if (a.modalita !== 'installato') continue;
+        const o = getOreAccessorioProdotto(p, a.codice);
+        oreAcc += o;
+        accDet.push({ codice: a.codice, ore: o });
+      }
+
+      const oreSlotTot = oreStruttura + oreAcc;
+      totale += oreSlotTot;
+      dettagli.push({
+        slot: i,
+        modello: mod,
+        oreStruttura,
+        accessori: accDet,
+        oreSlotTot,
+      });
+    }
+
+    return { totale, dettagli, posti };
+  }
+
+  function calcolaTempoViaggioOre(distanzaKm) {
+    const vel = getParametro('velocita_media_trasferta_kmh') ?? 60;
+    if (distanzaKm == null || distanzaKm < 0 || vel <= 0) return { andata: null, ar: null };
+    const andata = distanzaKm / vel;
+    return { andata, ar: 2 * andata };
+  }
+
+  function getTrasfertaDefaultsEmbedded() {
+    return {
+      giornata_lavorativa: { ora_inizio: 7.5, ora_fine: 17.5, pausa_pranzo_ore: 1, pausa_ora_inizio: 12, pausa_ora_fine: 13 },
+      premio_trasferta_euro_per_tecnico_per_giorno: 50,
+      ore_minime_cantiere_stesso_giorno_trasferta: 3,
+      ora_massima_rientro_casa: 18,
+      rientro_weekend_default: true,
+      premio_include_giorni_viaggio_default: true,
+      mezzo_aziendale: { eur_litro_gasolio: 1.75, litri_100km: 8, usura_euro_km: 0.12, pedaggio_euro_km: 0.06 },
+      treno: { costo_medio_andata_ritorno_per_persona: 90, taxi_stazione_cantiere_per_tratta: 45 },
+      aereo: { costo_medio_andata_ritorno_per_persona: 220, taxi_aeroporto_cantiere_per_tratta: 55 },
+      hotel_euro_per_notte: 75,
+      costo_extra_generico_default: 0,
+    };
+  }
+
+  function getTrasfertaCfg() {
+    const t = state.trasfertaConfig;
+    const def = getTrasfertaDefaultsEmbedded();
+    if (!t || typeof t !== 'object') return def;
+    return {
+      ...def,
+      ...t,
+      giornata_lavorativa: { ...def.giornata_lavorativa, ...(t.giornata_lavorativa || {}) },
+      mezzo_aziendale: { ...def.mezzo_aziendale, ...(t.mezzo_aziendale || {}) },
+      treno: { ...def.treno, ...(t.treno || {}) },
+      aereo: { ...def.aereo, ...(t.aereo || {}) },
+    };
+  }
+
+  /** Ore disponibili per lavoro (cantiere) al giorno: fascia − pausa pranzo (stesso valore per interni ed esterni). */
+  function getOreGiornataNetteLavoro() {
+    const g = getTrasfertaCfg().giornata_lavorativa || {};
+    const ini = Number(g.ora_inizio) >= 0 ? Number(g.ora_inizio) : 7.5;
+    const fin = Number(g.ora_fine) > ini ? Number(g.ora_fine) : 17.5;
+    const pz = Number(g.pausa_pranzo_ore) >= 0 ? Number(g.pausa_pranzo_ore) : 1;
+    return Math.max(0, fin - ini - pz);
+  }
+
+  /** Ore lavorabili in [oraA, oraB] togliendo la sovrapposizione con la pausa pranzo. */
+  function oreNetteInIntervallo(oraA, oraB, pausaInizio, pausaFine) {
+    if (oraB <= oraA) return 0;
+    let tot = oraB - oraA;
+    const pi = Math.max(oraA, pausaInizio);
+    const pf = Math.min(oraB, pausaFine);
+    if (pf > pi) tot -= pf - pi;
+    return Math.max(0, tot);
+  }
+
+  /** Lunedì: ore cantiere solo se ore nette − viaggio andata ≥ soglia minima. */
+  function oreCantiereLunedi(oreNette, tV, oreMin) {
+    const residuo = oreNette - tV;
+    if (residuo + 1e-9 >= oreMin) return Math.max(0, residuo);
+    return 0;
+  }
+
+  /** Venerdì: se rientro in weekend, partenza dal cantiere in tempo per essere a casa entro ora_max (meno ore viaggio). */
+  function oreCantiereVenerdi(oraInizio, oraFine, pausaInizio, pausaFine, oraMaxRientro, tV, rientroWeekend, oreNetteGiornoIntero) {
+    if (!rientroWeekend) return oreNetteGiornoIntero;
+    const oraPartenza = oraMaxRientro - tV;
+    if (oraPartenza <= oraInizio) return 0;
+    const fineLavoro = Math.min(oraFine, oraPartenza);
+    return oreNetteInIntervallo(oraInizio, fineLavoro, pausaInizio, pausaFine);
+  }
+
+  /**
+   * Motore settimanale trasferta: distribuisce H_int sulle giornate (lun–ven o lun–dom se no rientro weekend).
+   * Ritorna ore pagate = giorni pagati × N × ore nette giornaliera (ogni giorno in missione è pagato intero).
+   */
+  function simulaPianoTrasfertaInterni(opts) {
+    const {
+      H_int,
+      N_int,
+      oreNette,
+      tV,
+      oreMin,
+      oraInizio,
+      oraFine,
+      pausaInizio,
+      pausaFine,
+      oraMaxRientro,
+      rientroWeekend,
+      c_int,
+    } = opts;
+
+    const oreCapLun = oreCantiereLunedi(oreNette, tV, oreMin);
+    const oreCapVen = oreCantiereVenerdi(oraInizio, oraFine, pausaInizio, pausaFine, oraMaxRientro, tV, rientroWeekend, oreNette);
+    const oreCapMid = oreNette;
+
+    function notaGiorno(tipo, oreCapLunLoc, rientro) {
+      if (tipo === 'lun') {
+        if (oreCapLunLoc <= 1e-6) return 'Sotto le ore minime dopo l\'andata: nessun cantiere (giornata di viaggio).';
+        return 'Andata in trasferta; ore cantiere = ore nette − tempo viaggio.';
+      }
+      if (tipo === 'ven') {
+        if (!rientro) return 'Giornata in cantiere (rientro weekend disattivato).';
+        return `Partenza anticipata per rientro entro le ${formatOraDecimaleIt(oraMaxRientro)} (viaggio ${fmtOre(tV)}).`;
+      }
+      if (tipo === 'sab' || tipo === 'dom') return 'Weekend in cantiere (opzione senza rientro).';
+      return 'Giornata in cantiere.';
+    }
+
+    function viaggioOre(tipo, rientro) {
+      if (tipo === 'lun') return tV;
+      if (tipo === 'ven' && rientro) return tV;
+      return null;
+    }
+
+    function giorniTemplate() {
+      const base = [
+        { tipo: 'lun', label: 'Lunedì', cap: oreCapLun },
+        { tipo: 'mar', label: 'Martedì', cap: oreCapMid },
+        { tipo: 'mer', label: 'Mercoledì', cap: oreCapMid },
+        { tipo: 'gio', label: 'Giovedì', cap: oreCapMid },
+        { tipo: 'ven', label: 'Venerdì', cap: oreCapVen },
+      ];
+      if (!rientroWeekend) {
+        base.push(
+          { tipo: 'sab', label: 'Sabato', cap: oreCapMid },
+          { tipo: 'dom', label: 'Domenica', cap: oreCapMid },
+        );
+      }
+      return base;
+    }
+
+    let remaining = H_int;
+    const rows = [];
+    let weekNum = 0;
+    const maxWeeks = 260;
+    const tpl = giorniTemplate();
+
+    while (remaining > 1e-6 && weekNum < maxWeeks) {
+      weekNum += 1;
+      for (const d of tpl) {
+        const capTeam = N_int * d.cap;
+        const work = Math.min(remaining, capTeam);
+        remaining -= work;
+        const v = viaggioOre(d.tipo, rientroWeekend);
+        rows.push({
+          settimana: weekNum,
+          giorno: d.label,
+          tipo: d.tipo,
+          ore_cantiere_squadra: Math.round(work * 1000) / 1000,
+          ore_cantiere_max_squadra: Math.round(capTeam * 1000) / 1000,
+          ore_viaggio: v,
+          nota: notaGiorno(d.tipo, oreCapLun, rientroWeekend),
+        });
+        if (remaining <= 1e-6) break;
+      }
+    }
+
+    const overflow = remaining > 1e-3;
+    const paidDays = rows.length;
+    const orePagateInt = paidDays * N_int * oreNette;
+    const costoManodoperaInt = orePagateInt * c_int;
+
+    return {
+      rows,
+      paidDays,
+      orePagateInt,
+      costoManodoperaInt,
+      overflow,
+      oreCapLun,
+      oreCapVen,
+    };
+  }
+
+  function formatOraDecimaleIt(h) {
+    if (h == null || Number.isNaN(h)) return '—';
+    const H = Math.floor(h);
+    const m = Math.round((h - H) * 60);
+    return `${H}:${String(m).padStart(2, '0')}`;
+  }
+
+  /**
+   * Costo viaggio stimato in base alla modalità (solo stima contabile).
+   * Mezzo: gasolio + usura + pedaggio su km A/R. Treno/Aereo: biglietto medio + taxi stazione/aeroporto (andata+ritorno).
+   */
+  function stimaCostoViaggioTrasferta(distanzaKm, N_int, tipo) {
+    const cfg = getTrasfertaCfg();
+    const d = distanzaKm;
+    if (d == null || d <= 0 || N_int <= 0) return 0;
+    const km = 2 * d;
+    if (tipo === 'mezzo_aziendale') {
+      const m = cfg.mezzo_aziendale || {};
+      const lit = (m.litri_100km != null ? Number(m.litri_100km) : 8);
+      const eL = (m.eur_litro_gasolio != null ? Number(m.eur_litro_gasolio) : 1.75);
+      const gas = (km / 100) * lit * eL;
+      const usura = km * (m.usura_euro_km != null ? Number(m.usura_euro_km) : 0.12);
+      const ped = km * (m.pedaggio_euro_km != null ? Number(m.pedaggio_euro_km) : 0.06);
+      return gas + usura + ped;
+    }
+    if (tipo === 'treno') {
+      const t = cfg.treno || {};
+      const big = (t.costo_medio_andata_ritorno_per_persona != null ? Number(t.costo_medio_andata_ritorno_per_persona) : 90);
+      const taxi = (t.taxi_stazione_cantiere_per_tratta != null ? Number(t.taxi_stazione_cantiere_per_tratta) : 45);
+      return N_int * big + 2 * N_int * taxi;
+    }
+    if (tipo === 'aereo') {
+      const a = cfg.aereo || {};
+      const big = (a.costo_medio_andata_ritorno_per_persona != null ? Number(a.costo_medio_andata_ritorno_per_persona) : 220);
+      const taxi = (a.taxi_aeroporto_cantiere_per_tratta != null ? Number(a.taxi_aeroporto_cantiere_per_tratta) : 55);
+      return N_int * big + 2 * N_int * taxi;
+    }
+    return 0;
+  }
+
+  function fmtOre(h) {
+    if (h == null || Number.isNaN(h)) return '—';
+    return `${Math.round(h * 100) / 100} h`;
+  }
+
+  function fmtEuro(n) {
+    if (n == null || Number.isNaN(n)) return '—';
+    return `€ ${Math.round(n * 100) / 100}`;
+  }
+
+  function aggiornaOreInstallazioneUI() {
+    aggiornaValori();
+    const sec = $('#sezione-installazione');
+    if (!sec) return;
+
+    const d = state.distanzaKm;
+    const primo = state.valori.prodotti?.[0] || '';
+    if (d == null || !primo) {
+      sec.hidden = true;
+      if (state.valori) delete state.valori.stima_installazione;
+      return;
+    }
+
+    const { totale, dettagli, posti } = calcolaOreInstallazioneCantiere();
+    const { andata, ar } = calcolaTempoViaggioOre(d);
+
+    const soglia = getParametro('km_soglia_trasferta_interna') ?? 150;
+    const cfgTr = getTrasfertaCfg();
+    const gLav = cfgTr.giornata_lavorativa || {};
+    const oraInizioG = Number(gLav.ora_inizio) >= 0 ? Number(gLav.ora_inizio) : 7.5;
+    const oraFineG = Number(gLav.ora_fine) > oraInizioG ? Number(gLav.ora_fine) : 17.5;
+    const pausaPranzo = Number(gLav.pausa_pranzo_ore) >= 0 ? Number(gLav.pausa_pranzo_ore) : 1;
+    const oreNette = getOreGiornataNetteLavoro();
+    const tV = andata != null ? andata : 0;
+    const pausaInizio = Number(gLav.pausa_ora_inizio) >= 0 ? Number(gLav.pausa_ora_inizio) : 12;
+    const pausaFine = Number(gLav.pausa_ora_fine) > pausaInizio ? Number(gLav.pausa_ora_fine) : 13;
+
+    const elFascia = $('#testo-fascia-oraria');
+    if (elFascia) elFascia.textContent = `${formatOraDecimaleIt(oraInizioG)}–${formatOraDecimaleIt(oraFineG)}`;
+    const elPz = $('#testo-pausa-pranzo');
+    if (elPz) elPz.textContent = String(pausaPranzo);
+    const elOreNet = $('#valore-ore-giornata-nette');
+    if (elOreNet) elOreNet.textContent = String(Math.round(oreNette * 100) / 100);
+
+    const P = parseInt($('#input-presenza-interni')?.value, 10);
+    const pInt = Number.isNaN(P) ? 100 : Math.max(0, Math.min(100, P));
+    const N_int = parseInt($('#input-tecnici-interni')?.value, 10) || 0;
+    const N_est = calcoloNumeroTecniciEsterni();
+
+    const H = totale;
+    const H_int = (H * pInt) / 100;
+    const H_ext = (H * (100 - pInt)) / 100;
+
+    const c_int = getParametro('costo_orario_interno') ?? 0;
+    const c_ext = getParametro('costo_orario_esterno') ?? 0;
+    const rimborso = getParametro('rimborso_giornaliero_esterno') ?? 0;
+
+    const trasfertaAttiva = d > soglia && N_int > 0;
+    const tipoTr = $('#trasferta-tipo-modalita')?.value || 'mezzo_aziendale';
+    const premioInclViaggio = $('#trasferta-premio-giorni-viaggio')?.checked !== false;
+    const rientroWeekend = $('#trasferta-rientro-weekend')?.checked !== false;
+    const extraUtente = Math.max(0, parseFloat($('#trasferta-costo-extra')?.value) || 0);
+    const oreMinCfg = cfgTr.ore_minime_cantiere_stesso_giorno_trasferta != null ? Number(cfgTr.ore_minime_cantiere_stesso_giorno_trasferta) : 3;
+    const oraMaxRientro = cfgTr.ora_massima_rientro_casa != null ? Number(cfgTr.ora_massima_rientro_casa) : 18;
+
+    let giorniInt = 0;
+    let orePagateInt = 0;
+    let costoManodoperaInt = 0;
+    let pianoTrasferta = null;
+    if (N_int > 0 && H_int > 0) {
+      if (trasfertaAttiva) {
+        pianoTrasferta = simulaPianoTrasfertaInterni({
+          H_int,
+          N_int,
+          oreNette,
+          tV,
+          oreMin: oreMinCfg,
+          oraInizio: oraInizioG,
+          oraFine: oraFineG,
+          pausaInizio,
+          pausaFine,
+          oraMaxRientro,
+          rientroWeekend,
+          c_int,
+        });
+        giorniInt = pianoTrasferta.paidDays;
+        orePagateInt = pianoTrasferta.orePagateInt;
+        costoManodoperaInt = pianoTrasferta.costoManodoperaInt;
+      } else {
+        giorniInt = Math.max(1, Math.ceil(H_int / (N_int * Math.max(oreNette, 0.01))));
+        orePagateInt = N_int * giorniInt * oreNette;
+        costoManodoperaInt = orePagateInt * c_int;
+      }
+    }
+
+    const premioGiorno = cfgTr.premio_trasferta_euro_per_tecnico_per_giorno != null ? Number(cfgTr.premio_trasferta_euro_per_tecnico_per_giorno) : 50;
+    const giorniPremioBase = trasfertaAttiva && giorniInt > 0 ? giorniInt : 0;
+    const giorniPremio = trasfertaAttiva ? (premioInclViaggio ? giorniPremioBase : Math.max(0, giorniPremioBase - 2)) : 0;
+    const premioTot = trasfertaAttiva ? giorniPremio * N_int * premioGiorno : 0;
+    const costoViaggioStima = trasfertaAttiva ? stimaCostoViaggioTrasferta(d, N_int, tipoTr) : 0;
+    const hotelNotte = cfgTr.hotel_euro_per_notte != null ? Number(cfgTr.hotel_euro_per_notte) : 75;
+    const nottiHotel = trasfertaAttiva && giorniInt > 0 ? Math.max(0, giorniInt - 1) : 0;
+    const hotelTot = trasfertaAttiva ? nottiHotel * hotelNotte : 0;
+    const totaleVociTrasferta = trasfertaAttiva ? premioTot + costoViaggioStima + hotelTot + extraUtente : 0;
+    const costoInterniComplessivo = costoManodoperaInt + totaleVociTrasferta;
+
+    let giorniEst = 0;
+    let costoEst = 0;
+    if (H_ext > 0) {
+      if (N_est > 0) {
+        giorniEst = Math.max(1, Math.ceil(H_ext / Math.max(oreNette * N_est, 0.01)));
+        costoEst = H_ext * c_ext + giorniEst * rimborso * N_est;
+      } else {
+        costoEst = H_ext * c_ext;
+      }
+    }
+
+    const totaleMan = costoInterniComplessivo + costoEst;
+
+    const bloccoUt = $('#blocco-trasferta-utente');
+    if (bloccoUt) bloccoUt.hidden = !trasfertaAttiva;
+    const bloccoEs = $('#blocco-trasferta-esito');
+    if (bloccoEs) bloccoEs.hidden = !trasfertaAttiva;
+    const rigaTotInt = $('#riga-totale-interni-complessivo');
+    if (rigaTotInt) rigaTotInt.hidden = !trasfertaAttiva;
+
+    const wrapPiano = $('#trasferta-piano-settimanale-wrapper');
+    const tbodyPiano = $('#trasferta-tabella-giorni-body');
+    if (wrapPiano) wrapPiano.hidden = !trasfertaAttiva || !pianoTrasferta?.rows?.length;
+    if (tbodyPiano) {
+      if (trasfertaAttiva && pianoTrasferta?.rows?.length) {
+        tbodyPiano.innerHTML = '';
+        pianoTrasferta.rows.forEach((r) => {
+          const tr = document.createElement('tr');
+          const vi = r.ore_viaggio != null ? fmtOre(r.ore_viaggio) : '—';
+          tr.innerHTML = `<td>Sett. ${r.settimana} · ${r.giorno}</td><td>${fmtOre(r.ore_cantiere_squadra)}</td><td>${fmtOre(r.ore_cantiere_max_squadra)}</td><td>${vi}</td><td class="trasferta-cell-nota">${r.nota}</td>`;
+          tbodyPiano.appendChild(tr);
+        });
+        if (pianoTrasferta.overflow) {
+          const tr = document.createElement('tr');
+          tr.className = 'trasferta-riga-warning';
+          tr.innerHTML = '<td colspan="5">Attenzione: limite settimane superato; verifica ore o tecnici.</td>';
+          tbodyPiano.appendChild(tr);
+        }
+      } else {
+        tbodyPiano.innerHTML = '';
+      }
+    }
+
+    if (trasfertaAttiva) {
+      const elPr = $('#valore-premio-trasferta');
+      const premioExtraTxt = !premioInclViaggio && giorniPremioBase > 0 ? ' (2 gg viaggio esclusi dal premio)' : '';
+      if (elPr) elPr.textContent = `${fmtEuro(premioTot)} (${giorniPremio} gg × ${N_int} × ${premioGiorno} €)${premioExtraTxt}`;
+      const elVg = $('#valore-costo-viaggio-modalita');
+      if (elVg) elVg.textContent = `${fmtEuro(costoViaggioStima)} (${tipoTr.replace(/_/g, ' ')})`;
+      const elHt = $('#valore-costo-hotel-trasferta');
+      if (elHt) elHt.textContent = `${fmtEuro(hotelTot)} (${nottiHotel} notti × ${hotelNotte} €)`;
+      const elEx = $('#valore-costo-extra-trasferta-linea');
+      if (elEx) elEx.textContent = fmtEuro(extraUtente);
+      const elVt = $('#valore-totale-voci-trasferta');
+      if (elVt) elVt.textContent = fmtEuro(totaleVociTrasferta);
+    }
+
+    const elTot = $('#valore-ore-cantiere-totale');
+    if (elTot) elTot.textContent = fmtOre(H);
+    const elVa = $('#valore-viaggio-andata');
+    if (elVa) elVa.textContent = andata != null ? fmtOre(andata) : '—';
+    const elAr = $('#valore-viaggio-ar');
+    if (elAr) elAr.textContent = ar != null ? fmtOre(ar) : '—';
+
+    const ul = $('#lista-dettaglio-ore');
+    if (ul) {
+      ul.innerHTML = '';
+      if (!dettagli.length) {
+        const li = document.createElement('li');
+        li.textContent = 'Nessun prodotto selezionato oltre il primo.';
+        ul.appendChild(li);
+      } else {
+        dettagli.forEach((row) => {
+          const li = document.createElement('li');
+          const accTxt = row.accessori.length
+            ? row.accessori.map((a) => `${a.codice}: ${fmtOre(a.ore)}`).join(', ')
+            : 'nessun accessorio da installare';
+          li.innerHTML = `<strong>Prodotto ${row.slot}</strong> (${row.modello}), ${posti} PA — struttura ${fmtOre(row.oreStruttura)}; accessori: ${accTxt} → <strong>totale slot ${fmtOre(row.oreSlotTot)}</strong>`;
+          ul.appendChild(li);
+        });
+      }
+    }
+
+    const regime = d <= soglia ? `Giornata (≤ ${soglia} km)` : `Trasferta lunga (> ${soglia} km)`;
+    const elReg = $('#valore-regime-distanza');
+    if (elReg) elReg.textContent = regime;
+    const elOpi = $('#valore-ore-pagate-interne');
+    if (elOpi) elOpi.textContent = N_int > 0 && H_int > 0 ? fmtOre(orePagateInt) : '—';
+    const elCi = $('#valore-costo-interni');
+    if (elCi) elCi.textContent = H_int > 0 ? fmtEuro(costoManodoperaInt) : '—';
+    const elCiTot = $('#valore-totale-interni-complessivo');
+    if (elCiTot) elCiTot.textContent = H_int > 0 && trasfertaAttiva ? fmtEuro(costoInterniComplessivo) : (H_int > 0 ? fmtEuro(costoManodoperaInt) : '—');
+    const elCe = $('#valore-costo-esterni');
+    if (elCe) elCe.textContent = H_ext > 0 ? fmtEuro(costoEst) : '—';
+    const elTm = $('#valore-totale-manodopera');
+    if (elTm) elTm.textContent = H > 0 ? fmtEuro(totaleMan) : '—';
+
+    state.valori.stima_installazione = {
+      posti_auto: posti,
+      ore_lavoro_cantiere_totale: H,
+      ore_giornata_nette: oreNette,
+      dettaglio_slot: dettagli,
+      tempo_viaggio_andata_ore: andata,
+      tempo_viaggio_ar_ore: ar,
+      soglia_km: soglia,
+      regime: d <= soglia ? 'giornata' : 'trasferta_lunga',
+      presenza_interni_pct: pInt,
+      tecnici_interni: N_int,
+      tecnici_esterni: N_est,
+      ore_pagate_interne_stimate: N_int > 0 ? orePagateInt : null,
+      giorni_interni_stimati: giorniInt || null,
+      giorni_esterni_stimati: giorniEst || null,
+      piano_settimanale_interni: pianoTrasferta?.rows || null,
+      overflow_trasferta_simulazione: pianoTrasferta?.overflow || false,
+      costo_interni_manodopera_stimato: costoManodoperaInt,
+      costo_esterni_stimato: costoEst,
+      trasferta: trasfertaAttiva
+        ? {
+            tipo_modalita: tipoTr,
+            premio_totale: premioTot,
+            giorni_premio: giorniPremio,
+            giorni_pagati_missione: giorniInt,
+            costo_viaggio_stima: costoViaggioStima,
+            hotel_notti: nottiHotel,
+            hotel_totale: hotelTot,
+            extra_utente: extraUtente,
+            totale_voci_trasferta: totaleVociTrasferta,
+            rientro_weekend: rientroWeekend,
+            premio_include_giorni_viaggio: premioInclViaggio,
+          }
+        : null,
+      costo_interni_totale_con_trasferta: costoInterniComplessivo,
+      totale_manodopera_stimato: totaleMan,
+    };
+
+    sec.hidden = false;
+  }
+
   function mostraNascondiDomande() {
+    aggiornaValori();
     const domandaDistanza = $('#domanda-distanza');
     if (domandaDistanza) domandaDistanza.hidden = state.distanzaKm == null;
     abilitaProdotti();
     const secTecnici = $('#sezione-tecnici-noleggi');
-    if (secTecnici) secTecnici.hidden = false;
+    /* Stessa logica della domanda distanza: tecnici, trasporto struttura e riepilogo solo dopo km calcolati */
+    if (secTecnici) secTecnici.hidden = state.distanzaKm == null;
     aggiornaCampiCalcolati();
   }
 
@@ -595,7 +1237,189 @@
     return Math.round((costoKm * distanzaKm) * 100) / 100;
   }
 
+  /** Tariffa €/km nostro mezzo = somma componenti variabili (costanti.json). */
+  function getEurKmNostroMezzoSomma() {
+    const b = getParametro('nostro_mezzo_eur_km_base') ?? 0.05;
+    const p = getParametro('nostro_mezzo_eur_km_pedaggio') ?? 0;
+    const c = getParametro('nostro_mezzo_eur_km_carburante') ?? 0;
+    const u = getParametro('nostro_mezzo_eur_km_usura') ?? 0;
+    return Math.max(0, (Number(b) || 0) + (Number(p) || 0) + (Number(c) || 0) + (Number(u) || 0));
+  }
+
+  /**
+   * Trasporto struttura magazzino → cantiere: viaggi = ceil(posti/capacità da prodotto), costo = viaggi × 2d × €/km.
+   * modalita: nostro_mezzo | bilico | camion_gru
+   */
+  function calcolaDettaglioTrasportoMerci(distanzaKm, posti, modalita, prodotto) {
+    const labels = { nostro_mezzo: 'Nostro mezzo', bilico: 'Bilico', camion_gru: 'Mezzo con gru (trasporto)' };
+    let cap = 0;
+    if (modalita === 'nostro_mezzo') cap = Number(prodotto?.nostro_mezzo) || 0;
+    else if (modalita === 'bilico') cap = Number(prodotto?.bilico_13mt) || 0;
+    else cap = Number(prodotto?.camion_gru) || 0;
+
+    let rateKm = 0;
+    if (modalita === 'nostro_mezzo') rateKm = getEurKmNostroMezzoSomma();
+    else if (modalita === 'bilico') rateKm = getParametro('bilico_eur_km') ?? 2.2;
+    else rateKm = getParametro('camion_gru_eur_km') ?? 2;
+
+    if (!distanzaKm || distanzaKm <= 0 || cap <= 0) {
+      return {
+        costo: 0,
+        viaggi: 0,
+        cap,
+        kmTot: 0,
+        rateKm,
+        modalita,
+        etichetta: labels[modalita] || modalita,
+        avviso: cap <= 0 ? 'Capacità non definita per questo modello (prodotti.json: nostro_mezzo / bilico_13mt / camion_gru).' : null,
+      };
+    }
+
+    const viaggi = Math.ceil((Number(posti) || 0) / cap);
+    const kmAR = 2 * distanzaKm;
+    const kmTot = viaggi * kmAR;
+    const costo = Math.round(kmTot * rateKm * 100) / 100;
+    return {
+      costo,
+      viaggi,
+      cap,
+      kmTot,
+      kmAR,
+      distanzaAndata: distanzaKm,
+      rateKm,
+      modalita,
+      etichetta: labels[modalita] || modalita,
+      avviso: null,
+    };
+  }
+
+  function sommaServiziPersonalizzati() {
+    let s = 0;
+    (state.valori.servizi_personalizzati || []).forEach((x) => {
+      s += Number(x.costo) || 0;
+    });
+    return Math.round(s * 100) / 100;
+  }
+
+  /** Aggiorna riepilogo costi installazione, trasporto struttura e sicurezza. */
+  function aggiornaRiepilogoCostiInstallazione() {
+    const bloccoTr = $('#blocco-trasporto-merci');
+    const bloccoTot = $('#blocco-totale-installazione');
+    const primo = state.valori.prodotti?.[0] || '';
+    const vis = state.distanzaKm != null && !!primo;
+    if (bloccoTr) bloccoTr.hidden = !vis;
+    if (bloccoTot) bloccoTot.hidden = !vis;
+    if (!vis) {
+      state.valori.costi_installazione_riepilogo = null;
+      return;
+    }
+
+    const posti = state.valori.numero_posti_auto || 2;
+    const modalita = document.querySelector('input[name="trasporto_modalita_merci"]:checked')?.value || 'nostro_mezzo';
+    const p1 = prodottoSelezionato(1);
+    const det = calcolaDettaglioTrasportoMerci(state.distanzaKm, posti, modalita, p1);
+
+    const elTesto = $('#valore-trasporto-merci-testo');
+    const elHint = $('#hint-trasporto-merci-cap');
+    const elAvviso = $('#avviso-trasporto-merci');
+    if (det.avviso) {
+      if (elTesto) elTesto.textContent = '—';
+      if (elHint) elHint.textContent = '';
+      if (elAvviso) {
+        elAvviso.textContent = det.avviso;
+        elAvviso.hidden = false;
+      }
+    } else {
+      if (elAvviso) elAvviso.hidden = true;
+      if (elTesto) {
+        const r = Number(det.rateKm) || 0;
+        elTesto.textContent = `${fmtEuro(det.costo)} — ${det.viaggi} viaggi, ${det.kmTot} km totali, €${r.toFixed(3)}/km (${det.etichetta})`;
+      }
+      if (elHint) {
+        elHint.textContent = `${det.etichetta}: capacità ${det.cap} posti/viaggio, ${det.viaggi} viaggi, ${det.kmTot} km totali percorsi stimati.`;
+      }
+    }
+
+    const st = state.valori.stima_installazione;
+    const man = st?.totale_manodopera_stimato != null ? Number(st.totale_manodopera_stimato) : 0;
+
+    const mulActv = $('#toggle-muletto')?.checked;
+    const scaActv = $('#toggle-scala')?.checked;
+    const gruActv = $('#toggle-gru')?.checked;
+    const costoMul = mulActv ? calcoloCostoMuletto($('#input-giorni-muletto')?.value) : null;
+    const costoSca = scaActv ? calcoloCostoScala($('#input-giorni-scala')?.value) : null;
+    const giorniGru = parseInt($('#input-giorni-gru')?.value, 10) || 1;
+    const costoGruUn = gruActv ? getCostoGruPerDistanza(state.distanzaKm) : null;
+    const costoGruTot = costoGruUn != null && gruActv ? Math.round(costoGruUn * giorniGru * 100) / 100 : 0;
+
+    const cMul = costoMul != null ? costoMul : 0;
+    const cSca = costoSca != null ? costoSca : 0;
+    const servPers = sommaServiziPersonalizzati();
+
+    const subtotale = Math.round((man + det.costo + cMul + cSca + costoGruTot + servPers) * 100) / 100;
+
+    const sicAtt = $('#sicurezza-includi')?.checked === true;
+    let sicEuro = 0;
+    if (sicAtt) sicEuro = Math.max(0, parseFloat($('#sicurezza-importo')?.value) || 0);
+    const totaleFin = Math.round((subtotale + sicEuro) * 100) / 100;
+
+    const pctSic = getParametro('sicurezza_percentuale_auto') ?? 5;
+    const elTestoSic = $('#testo-sicurezza-finale');
+    if (elTestoSic) {
+      if (sicAtt && sicEuro > 0) {
+        elTestoSic.textContent = `Costi sicurezza inclusi: ${fmtEuro(sicEuro)} (sommati al totale installazione).`;
+        elTestoSic.hidden = false;
+      } else {
+        elTestoSic.hidden = true;
+      }
+    }
+
+    const elRman = $('#riep-manodopera');
+    if (elRman) elRman.textContent = fmtEuro(man);
+    const elRt = $('#riep-trasporto-merci');
+    if (elRt) elRt.textContent = det.avviso ? '— (vedi avviso)' : fmtEuro(det.costo);
+    const elRm = $('#riep-muletto');
+    if (elRm) elRm.textContent = mulActv && costoMul != null ? fmtEuro(costoMul) : '—';
+    const elRs = $('#riep-scala');
+    if (elRs) elRs.textContent = scaActv && costoSca != null ? fmtEuro(costoSca) : '—';
+    const elRg = $('#riep-gru-servizio');
+    if (elRg) elRg.textContent = gruActv && costoGruUn != null ? fmtEuro(costoGruTot) : '—';
+    const elRp = $('#riep-servizi-pers');
+    if (elRp) elRp.textContent = servPers > 0 ? fmtEuro(servPers) : '€ 0';
+    const elSub = $('#riep-subtotale');
+    if (elSub) elSub.textContent = fmtEuro(subtotale);
+    const elTot = $('#valore-totale-finale-installazione');
+    if (elTot) elTot.textContent = fmtEuro(totaleFin);
+
+    const testoTrasporto = det.avviso
+      ? det.avviso
+      : `Trasporto struttura (${det.etichetta}): ${det.viaggi} viaggi, ${det.kmTot} km totali (A/R), tariffa €${(Number(det.rateKm) || 0).toFixed(3)}/km → ${fmtEuro(det.costo)}`;
+    const testoSicurezza = sicAtt && sicEuro > 0
+      ? `Costi sicurezza: ${fmtEuro(sicEuro)} (inclusi nel totale installazione; calcolo automatico = ${pctSic}% del subtotale).`
+      : 'Costi sicurezza: non inclusi.';
+
+    state.valori.costi_installazione_riepilogo = {
+      manodopera_stimata: man,
+      trasporto_struttura: det,
+      costo_trasporto_struttura: det.costo,
+      noleggio_muletto: mulActv ? cMul : null,
+      noleggio_scala: scaActv ? cSca : null,
+      servizio_gru_cantiere: gruActv ? costoGruTot : null,
+      servizi_personalizzati: servPers,
+      subtotale_senza_sicurezza: subtotale,
+      sicurezza_inclusa: sicAtt,
+      sicurezza_importo: sicEuro,
+      totale_installazione: totaleFin,
+      testo_trasporto_struttura: testoTrasporto,
+      testo_costi_sicurezza: testoSicurezza,
+    };
+
+    state.valori.costo_trasporto_struttura_stimato = det.costo;
+    state.valori.modalita_trasporto_merci = modalita;
+  }
+
   function aggiornaCampiCalcolati() {
+    aggiornaValori();
     const elEst = $('#valore-tecnici-esterni');
     if (elEst) elEst.textContent = String(calcoloNumeroTecniciEsterni());
     const elPres = $('#valore-presenza-esterni');
@@ -640,15 +1464,23 @@
         elGru.textContent = '—';
       }
     }
+
+    aggiornaOreInstallazioneUI();
+    aggiornaRiepilogoCostiInstallazione();
   }
 
   function aggiornaRiepilogo() {
-    aggiornaValori();
+    aggiornaCampiCalcolati();
     const out = $('#output-riepilogo');
     const sec = $('#riepilogo');
     if (!out || !sec) return;
     out.textContent = JSON.stringify(
-      { ...state.valori, distanza_km: state.distanzaKm, parametri_sessione: state.parametri },
+      {
+        ...state.valori,
+        distanza_km: state.distanzaKm,
+        parametri_sessione: state.parametri,
+        costi_installazione: state.valori.costi_installazione_riepilogo || null,
+      },
       null,
       2
     );
@@ -886,6 +1718,34 @@
   function bindForm() {
     const form = $('#form-calcolo');
     const btnInvia = $('#btn-invia');
+    const btnSicAuto = $('#btn-sicurezza-auto');
+    if (btnSicAuto) {
+      btnSicAuto.addEventListener('click', () => {
+        aggiornaCampiCalcolati();
+        const st = state.valori.stima_installazione;
+        const man = st?.totale_manodopera_stimato != null ? Number(st.totale_manodopera_stimato) : 0;
+        const posti = state.valori.numero_posti_auto || 2;
+        const modalita = document.querySelector('input[name="trasporto_modalita_merci"]:checked')?.value || 'nostro_mezzo';
+        const det = calcolaDettaglioTrasportoMerci(state.distanzaKm, posti, modalita, prodottoSelezionato(1));
+        const mulActv = $('#toggle-muletto')?.checked;
+        const scaActv = $('#toggle-scala')?.checked;
+        const gruActv = $('#toggle-gru')?.checked;
+        const cMul = mulActv ? (calcoloCostoMuletto($('#input-giorni-muletto')?.value) || 0) : 0;
+        const cSca = scaActv ? (calcoloCostoScala($('#input-giorni-scala')?.value) || 0) : 0;
+        const giorniGru = parseInt($('#input-giorni-gru')?.value, 10) || 1;
+        const gu = gruActv ? getCostoGruPerDistanza(state.distanzaKm) : null;
+        const cGru = gu != null && gruActv ? gu * giorniGru : 0;
+        const servPers = sommaServiziPersonalizzati();
+        const sub = man + det.costo + cMul + cSca + cGru + servPers;
+        const pct = (getParametro('sicurezza_percentuale_auto') ?? 5) / 100;
+        const importo = Math.round(sub * pct * 100) / 100;
+        const chk = $('#sicurezza-includi');
+        const inp = $('#sicurezza-importo');
+        if (chk) chk.checked = true;
+        if (inp) inp.value = String(importo);
+        aggiornaCampiCalcolati();
+      });
+    }
     if (form) {
       form.addEventListener('submit', (e) => {
         e.preventDefault();
@@ -897,13 +1757,13 @@
       if (e.target.matches('select[name^="prodotto_"]')) {
         aggiornaValori();
         if (e.target.id === 'input-prodotto-1') aggiornaDopoModello(1);
+        aggiornaCampiCalcolati();
       }
-      if (e.target.matches('select[name^="accessorio_"]') || e.target.id === 'input-posti-auto') aggiornaValori();
-      if (e.target.matches('input[name^="accessorio_modalita_"]')) aggiornaValori();
       if (e.target.matches('#input-tecnici-interni, #input-presenza-interni, #input-giorni-muletto, #input-giorni-scala, #input-giorni-gru')) {
         aggiornaValori();
         aggiornaCampiCalcolati();
       }
+      if (e.target.id === 'input-posti-auto') aggiornaCampiCalcolati();
       /* Toggle noleggi: mostra/nasconde dettagli e ricalcola */
       if (e.target.matches('.noleggio-toggle')) {
         const dettagliId = e.target.id.replace('toggle-', 'dettagli-');
@@ -912,16 +1772,21 @@
         aggiornaValori();
         aggiornaCampiCalcolati();
       }
-      /* Toggle accessori */
-      if (e.target.matches('.accessorio-toggle')) {
-        const dettagliId = e.target.id.replace('toggle-', 'dettagli-');
-        const dettagli = document.getElementById(dettagliId);
-        if (dettagli) dettagli.hidden = !e.target.checked;
+      if (e.target.matches('#trasferta-tipo-modalita, #trasferta-rientro-weekend, #trasferta-premio-giorni-viaggio, #trasferta-costo-extra')) {
+        aggiornaCampiCalcolati();
+      }
+      if (e.target.matches('input[name="trasporto_modalita_merci"], #sicurezza-includi')) {
         aggiornaValori();
+        aggiornaCampiCalcolati();
       }
     });
     document.getElementById('form-calcolo')?.addEventListener('input', (e) => {
-      if (e.target.id === 'input-posti-auto') aggiornaValori();
+      if (e.target.id === 'input-posti-auto') aggiornaCampiCalcolati();
+      if (e.target.id === 'trasferta-costo-extra') aggiornaCampiCalcolati();
+      if (e.target.id === 'sicurezza-importo') {
+        aggiornaValori();
+        aggiornaCampiCalcolati();
+      }
       if (e.target.matches('#input-tecnici-interni, #input-presenza-interni, #input-giorni-muletto, #input-giorni-scala, #input-giorni-gru')) {
         aggiornaValori();
         aggiornaCampiCalcolati();
@@ -965,6 +1830,7 @@
     bindServiziPersonalizzati();
     bindIndirizzoUI();
     bindForm();
+    bindModalAccessori();
     mostraNascondiDomande();
     checkSubmitFn();
   }

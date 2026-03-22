@@ -55,6 +55,29 @@ npm start
 
 L'applicazione sarà disponibile su `http://localhost:3000`
 
+## 🚀 Deploy in Produzione
+
+### Opzione 1: Vercel (Consigliato per siti statici)
+Deploy veloce e gratuito, ma **senza supporto per salvataggio file**.
+
+📖 **[Guida completa Deploy Vercel](DEPLOY_VERCEL.md)**
+
+### Opzione 2: Railway (Consigliato per salvataggio dati)
+Supporta **scrittura file system** - il salvataggio JSON funziona!
+
+📖 **[Guida completa Deploy Railway](DEPLOY_RAILWAY.md)**
+
+### Confronto Rapido
+
+| Caratteristica | Vercel | Railway |
+|---------------|--------|---------|
+| Salvataggio JSON | ❌ No | ✅ Sì |
+| Deploy automatico | ✅ Sì | ✅ Sì |
+| Piano gratuito | ✅ Illimitato | ✅ $5/mese |
+| Setup | Facile | Facile |
+
+**Raccomandazione**: Usa **Railway** se vuoi salvare le modifiche ai parametri!
+
 ## Utilizzo Gestione Prodotti
 
 1. Dalla pagina principale, clicca su **📦 Gestione Prodotti**

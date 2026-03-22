@@ -68,15 +68,32 @@
                         <p id="valore-distanza" class="valore-calcolato">—</p>
                     </div>
 
-                    <!-- Fino a 4 prodotti: il primo obbligatorio, dal 2° opzionale. Per ogni prodotto 1 accessorio. -->
+                    <!-- Fino a 4 prodotti: il primo obbligatorio, dal 2° opzionale. Accessori multipli per prodotto. -->
                     <div class="prodotti-container" id="container-prodotti" hidden>
-                        <p class="prodotti-intro">Inserire fino a 4 prodotti (il primo è obbligatorio). Per ogni prodotto è possibile scegliere un accessorio.</p>
+                        <p class="prodotti-intro">Inserire fino a 4 prodotti (il primo è obbligatorio). Per ogni prodotto puoi selezionare più accessori (solo fornito o fornito e installato).</p>
                         <div id="container-slot-prodotti"></div>
                     </div>
 
                     <!-- Tecnici e noleggi -->
                     <div class="sezione-tecnici-noleggi" id="sezione-tecnici-noleggi" hidden>
                         <h2 class="sezione-titolo">Tecnici e noleggi</h2>
+
+                        <!-- Trasporto struttura magazzino → cantiere -->
+                        <div class="blocco-trasporto-merci" id="blocco-trasporto-merci" hidden>
+                            <h3 class="sezione-sottotitolo">Trasporto struttura</h3>
+                            <p class="hint">Scegli come viene trasportata la struttura. I posti auto per viaggio sono quelli indicati in <strong>prodotti.json</strong> per il modello selezionato (nostro mezzo, bilico 13m, camion gru). Il costo usa i €/km in «Parametri e costi» (somma variabili per il nostro mezzo).</p>
+                            <div class="trasporto-merci-radios" role="radiogroup" aria-label="Modalità trasporto struttura">
+                                <label class="trasporto-merci-radio-label"><input type="radio" name="trasporto_modalita_merci" value="nostro_mezzo" checked> Nostro mezzo</label>
+                                <label class="trasporto-merci-radio-label"><input type="radio" name="trasporto_modalita_merci" value="bilico"> Bilico</label>
+                                <label class="trasporto-merci-radio-label"><input type="radio" name="trasporto_modalita_merci" value="camion_gru"> Mezzo con gru (trasporto)</label>
+                            </div>
+                            <div class="domanda domanda-computed">
+                                <label>Stima costo trasporto struttura</label>
+                                <p id="valore-trasporto-merci-testo" class="valore-calcolato">—</p>
+                                <span class="hint" id="hint-trasporto-merci-cap"></span>
+                            </div>
+                            <p id="avviso-trasporto-merci" class="hint avviso-trasporto" hidden></p>
+                        </div>
 
                         <!-- Tecnici: select interni + presenza % affiancati -->
                         <div class="tecnici-row">
@@ -114,6 +131,121 @@
                                 <label>Presenza esterni (%)</label>
                                 <p id="valore-presenza-esterni" class="valore-calcolato" aria-live="polite">0%</p>
                                 <span class="hint">100 − % interni</span>
+                            </div>
+                        </div>
+
+                        <!-- Ore installazione (cantiere), trasferta e stima manodopera -->
+                        <div class="sezione-installazione" id="sezione-installazione" hidden>
+                            <h3 class="sezione-installazione-titolo">Ore installazione e stima manodopera</h3>
+                            <p class="hint sezione-installazione-intro">Ore di lavoro <strong>in cantiere</strong> da prodotti.json (posti auto) e accessori installati; il tempo di viaggio è calcolato a parte. I costi usano i parametri in «Parametri e costi».</p>
+
+                            <div class="installazione-grid">
+                                <div class="domanda domanda-computed">
+                                    <label>Totale ore lavoro in cantiere</label>
+                                    <p id="valore-ore-cantiere-totale" class="valore-calcolato valore-ore-grande">—</p>
+                                </div>
+                                <div class="domanda domanda-computed">
+                                    <label>Tempo viaggio andata (solo trasferta)</label>
+                                    <p id="valore-viaggio-andata" class="valore-calcolato">—</p>
+                                </div>
+                                <div class="domanda domanda-computed">
+                                    <label>Tempo viaggio A/R</label>
+                                    <p id="valore-viaggio-ar" class="valore-calcolato">—</p>
+                                </div>
+                            </div>
+
+                            <ul id="lista-dettaglio-ore" class="lista-dettaglio-ore" aria-label="Dettaglio ore per prodotto"></ul>
+
+                            <div class="hint installazione-ore-nette">
+                                <strong>Ore giornata operative</strong> (tutti i calcoli): da <span id="testo-fascia-oraria">7:30–17:30</span> viene sempre sottratta <span id="testo-pausa-pranzo">1</span> h di pausa pranzo (monte ore netto: <span id="valore-ore-giornata-nette">—</span> h/giorno).
+                            </div>
+
+                            <div id="blocco-trasferta-utente" class="blocco-trasferta-utente" hidden>
+                                <h4 class="trasferta-sottotitolo">Trasferta — squadre interne (oltre la soglia km)</h4>
+                                <p class="hint">Premio e costi di viaggio si applicano solo se la distanza supera la soglia e ci sono tecnici interni. Scegli la modalità di trasferimento.</p>
+                                <div class="trasferta-row">
+                                    <div class="domanda">
+                                        <label for="trasferta-tipo-modalita">Modalità trasferimento</label>
+                                        <select id="trasferta-tipo-modalita" name="trasferta_tipo_modalita">
+                                            <option value="mezzo_aziendale">Mezzo aziendale (furgone)</option>
+                                            <option value="treno">Treno</option>
+                                            <option value="aereo">Aereo</option>
+                                        </select>
+                                    </div>
+                                    <div class="domanda trasferta-checks">
+                                        <label class="trasferta-check-label">
+                                            <input type="checkbox" id="trasferta-rientro-weekend" checked>
+                                            Rientro a casa nel weekend (default: sì; lunedì partenza, venerdì rientro)
+                                        </label>
+                                        <label class="trasferta-check-label">
+                                            <input type="checkbox" id="trasferta-premio-giorni-viaggio" checked>
+                                            Conta i giorni di viaggio nel premio trasferta (andata/ritorno)
+                                        </label>
+                                    </div>
+                                    <div class="domanda">
+                                        <label for="trasferta-costo-extra">Costo extra personalizzato (€)</label>
+                                        <input type="number" id="trasferta-costo-extra" min="0" step="1" value="0" placeholder="0">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div id="blocco-trasferta-esito" class="blocco-trasferta-esito" hidden>
+                                <h4 class="trasferta-sottotitolo">Dettaglio costi trasferta (interni)</h4>
+                                <ul class="lista-trasferta-esito">
+                                    <li>Premio trasferta (€50/tecnico/giorno, giorni calcolati): <strong id="valore-premio-trasferta">—</strong></li>
+                                    <li>Stima viaggio (modalità scelta): <strong id="valore-costo-viaggio-modalita">—</strong></li>
+                                    <li>Hotel (notti stimate): <strong id="valore-costo-hotel-trasferta">—</strong></li>
+                                    <li>Extra personalizzato: <strong id="valore-costo-extra-trasferta-linea">—</strong></li>
+                                    <li class="trasferta-tot-parz"><strong>Totale voci trasferta:</strong> <strong id="valore-totale-voci-trasferta">—</strong></li>
+                                </ul>
+                                <div id="trasferta-piano-settimanale-wrapper" class="trasferta-piano-wrapper" hidden>
+                                    <h5 class="trasferta-piano-titolo">Piano settimanale (giorno per giorno)</h5>
+                                    <table class="trasferta-tabella-giorni" aria-label="Ore cantiere e viaggio per giorno">
+                                        <thead>
+                                            <tr>
+                                                <th>Giorno</th>
+                                                <th>Ore cantiere (squadra)</th>
+                                                <th>Massimo giorno</th>
+                                                <th>Viaggio</th>
+                                                <th>Note</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="trasferta-tabella-giorni-body"></tbody>
+                                    </table>
+                                    <p class="hint trasferta-piano-hint">Distribuzione delle ore lavoro in cantiere: lun e ven tengono conto di andata/rientro e dell’ora massima di rientro; la pausa pranzo è sempre esclusa. Ogni giorno in missione conta come giornata intera per le ore pagate.</p>
+                                </div>
+                                <p class="hint trasferta-note-dinamiche">Venerdì: partenza anticipata per rientro entro l’ora massima (parametri). Lunedì: cantiere solo se restano almeno le ore minime dopo il viaggio di andata. Disattivando il rientro weekend si aggiungono sabato e domenica al ciclo.</p>
+                            </div>
+
+                            <div class="installazione-stima" id="blocco-stima-costi">
+                                <h4 class="installazione-stima-titolo">Stima costi manodopera (indicativa)</h4>
+                                <p class="hint">Interni: oltre la soglia km si applicano premio trasferta (€/tecnico/giorno), costi viaggio e hotel come da sezione «Trasferta». Esterni: ore nette (stessa giornata − pausa pranzo) + rimborso.</p>
+                                <div class="installazione-grid installazione-grid-stima">
+                                    <div class="domanda domanda-computed">
+                                        <label>Regime distanza</label>
+                                        <p id="valore-regime-distanza" class="valore-calcolato">—</p>
+                                    </div>
+                                    <div class="domanda domanda-computed">
+                                        <label>Ore pagate interne (stima)</label>
+                                        <p id="valore-ore-pagate-interne" class="valore-calcolato">—</p>
+                                    </div>
+                                    <div class="domanda domanda-computed">
+                                        <label>Costo interni — solo manodopera (€)</label>
+                                        <p id="valore-costo-interni" class="valore-calcolato">—</p>
+                                    </div>
+                                    <div class="domanda domanda-computed" id="riga-totale-interni-complessivo" hidden>
+                                        <label>Totale interni (manodopera + trasferta)</label>
+                                        <p id="valore-totale-interni-complessivo" class="valore-calcolato">—</p>
+                                    </div>
+                                    <div class="domanda domanda-computed">
+                                        <label>Costo esterni (€)</label>
+                                        <p id="valore-costo-esterni" class="valore-calcolato">—</p>
+                                    </div>
+                                    <div class="domanda domanda-computed installazione-totale-manodopera">
+                                        <label>Totale manodopera stimato (€)</label>
+                                        <p id="valore-totale-manodopera" class="valore-calcolato valore-ore-grande">—</p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -174,7 +306,7 @@
                             <label class="noleggio-toggle-label" for="toggle-gru">
                                 <input type="checkbox" class="noleggio-toggle" id="toggle-gru" name="attivo_gru">
                                 <span class="toggle-switch" aria-hidden="true"></span>
-                                <span class="noleggio-toggle-testo">Servizio gru</span>
+                                <span class="noleggio-toggle-testo">Servizio gru in cantiere</span>
                             </label>
                             <div class="noleggio-dettagli" id="dettagli-gru" hidden>
                                 <div class="noleggio-controlli">
@@ -191,7 +323,7 @@
                                         <p id="valore-gru-trasporto" class="valore-costo" aria-live="polite">—</p>
                                     </div>
                                 </div>
-                                <span class="hint">Costi da gru.json in base alla distanza</span>
+                                <span class="hint">Costi da gru.json (noleggio/servizio in cantiere; distinto dal «Mezzo con gru» per trasporto struttura)</span>
                             </div>
                         </div>
 
@@ -203,6 +335,39 @@
                             <div id="container-servizi-personalizzati"></div>
                             
                             <button type="button" id="btn-aggiungi-servizio" class="btn btn-aggiungi-servizio">Aggiungi servizio personalizzato</button>
+                        </div>
+
+                        <!-- Totale installazione e sicurezza -->
+                        <div class="blocco-totale-installazione" id="blocco-totale-installazione" hidden>
+                            <h3 class="sezione-sottotitolo">Riepilogo costi installazione</h3>
+                            <ul class="lista-costi-installazione">
+                                <li>Manodopera stimata: <strong id="riep-manodopera">—</strong></li>
+                                <li>Trasporto struttura: <strong id="riep-trasporto-merci">—</strong></li>
+                                <li>Noleggio muletto: <strong id="riep-muletto">—</strong></li>
+                                <li>Noleggio scala: <strong id="riep-scala">—</strong></li>
+                                <li>Servizio gru in cantiere: <strong id="riep-gru-servizio">—</strong></li>
+                                <li>Servizi personalizzati: <strong id="riep-servizi-pers">—</strong></li>
+                                <li class="lista-costi-subtot">Subtotale (senza sicurezza): <strong id="riep-subtotale">—</strong></li>
+                            </ul>
+                            <div class="sicurezza-blocco">
+                                <label class="sicurezza-check-label">
+                                    <input type="checkbox" id="sicurezza-includi" name="sicurezza_includi">
+                                    Includi costi sicurezza nel totale finale
+                                </label>
+                                <div class="sicurezza-importo-riga">
+                                    <div class="domanda">
+                                        <label for="sicurezza-importo">Importo sicurezza (€)</label>
+                                        <input type="number" id="sicurezza-importo" min="0" step="0.01" value="0" placeholder="0">
+                                    </div>
+                                    <button type="button" id="btn-sicurezza-auto" class="btn btn-secondary btn-sicurezza-auto">Calcolo automatico</button>
+                                </div>
+                                <p class="hint">Il calcolo automatico applica la percentuale sul subtotale (voci sopra, senza sicurezza). La percentuale è configurabile in Parametri e costi.</p>
+                            </div>
+                            <p class="totale-finale-installazione">
+                                <strong>Totale installazione:</strong>
+                                <span id="valore-totale-finale-installazione" class="valore-calcolato valore-ore-grande">—</span>
+                            </p>
+                            <p class="hint testo-sicurezza-finale" id="testo-sicurezza-finale" hidden></p>
                         </div>
                     </div>
                 </section>
@@ -220,6 +385,25 @@
         </main>
     </div>
 
+    <!-- Modal scelta accessori (per slot prodotto) -->
+    <div id="modal-accessori" class="modal" hidden aria-labelledby="modal-accessori-titolo">
+        <div class="modal-overlay" id="modal-accessori-overlay"></div>
+        <div class="modal-content modal-accessori-panel">
+            <div class="modal-header">
+                <h2 id="modal-accessori-titolo">Accessori</h2>
+                <button type="button" id="btn-chiudi-modal-accessori" class="btn-chiudi-modal" aria-label="Chiudi">✕</button>
+            </div>
+            <div class="modal-body">
+                <p id="modal-accessori-sottotitolo" class="modal-accessori-sottotitolo"></p>
+                <div id="modal-accessori-lista" class="modal-accessori-lista"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" id="btn-conferma-accessori" class="btn btn-primary">Conferma</button>
+                <button type="button" id="btn-annulla-accessori" class="btn btn-secondary">Annulla</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal Parametri e Costi -->
     <div id="modal-parametri" class="modal" hidden>
         <div class="modal-overlay"></div>
@@ -231,10 +415,10 @@
 
             <div class="modal-tabs">
                 <button type="button" class="modal-tab active" data-tab="costanti">Costanti</button>
-                <button type="button" class="modal-tab" data-tab="prodotti">Prodotti</button>
                 <button type="button" class="modal-tab" data-tab="accessori">Accessori</button>
                 <button type="button" class="modal-tab" data-tab="trasporti">Trasporti</button>
                 <button type="button" class="modal-tab" data-tab="gru">Gru</button>
+                <button type="button" class="modal-tab" data-tab="trasferta">Trasferta</button>
             </div>
 
             <div class="modal-body">
@@ -279,11 +463,76 @@
                             <input type="number" id="param-scala-giorno" min="0" step="1">
                         </div>
                     </div>
-                </div>
 
-                <!-- Tab Prodotti -->
-                <div class="tab-content" data-tab-content="prodotti">
-                    <div id="tabella-prodotti-container"></div>
+                    <div class="parametri-group">
+                        <h3 class="parametri-group-titolo">Trasporto struttura (€/km)</h3>
+                        <p class="hint">Nostro mezzo: tariffa = base + pedaggio + carburante + usura (tutti €/km). Bilico e camion gru: tariffa unica. Il costo totale = viaggi × (km A/R per viaggio) × tariffa.</p>
+                        <div class="domanda">
+                            <label for="param-trm-base">Nostro mezzo — base €/km</label>
+                            <input type="number" id="param-trm-base" min="0" step="0.01" value="0.05">
+                        </div>
+                        <div class="domanda">
+                            <label for="param-trm-pedaggio">Nostro mezzo — pedaggio €/km</label>
+                            <input type="number" id="param-trm-pedaggio" min="0" step="0.01">
+                        </div>
+                        <div class="domanda">
+                            <label for="param-trm-carburante">Nostro mezzo — carburante €/km</label>
+                            <input type="number" id="param-trm-carburante" min="0" step="0.01">
+                        </div>
+                        <div class="domanda">
+                            <label for="param-trm-usura">Nostro mezzo — usura €/km</label>
+                            <input type="number" id="param-trm-usura" min="0" step="0.01">
+                        </div>
+                        <div class="domanda">
+                            <label for="param-trm-bilico">Bilico €/km</label>
+                            <input type="number" id="param-trm-bilico" min="0" step="0.01" value="2.2">
+                        </div>
+                        <div class="domanda">
+                            <label for="param-trm-camion-gru">Mezzo con gru (trasporto) €/km</label>
+                            <input type="number" id="param-trm-camion-gru" min="0" step="0.01" value="2">
+                        </div>
+                        <div class="domanda">
+                            <label for="param-sicurezza-pct">% calcolo automatico sicurezza su subtotale</label>
+                            <input type="number" id="param-sicurezza-pct" min="0" max="100" step="0.5" value="5">
+                        </div>
+                    </div>
+
+                    <div class="parametri-group">
+                        <h3 class="parametri-group-titolo">Installazione e trasferta tecnici</h3>
+                        <p class="hint">Soglia km: sotto si assume rientro in giornata (partenza / rientro in azienda). Velocità media per stimare il tempo di viaggio.</p>
+                        <div class="domanda">
+                            <label for="param-inst-soglia-km">Soglia trasferta interni (km)</label>
+                            <input type="number" id="param-inst-soglia-km" min="1" step="1" data-param-inst="km_soglia_trasferta_interna">
+                        </div>
+                        <div class="domanda">
+                            <label for="param-inst-vel-kmh">Velocità media trasferta (km/h)</label>
+                            <input type="number" id="param-inst-vel-kmh" min="1" step="1" data-param-inst="velocita_media_trasferta_kmh">
+                        </div>
+                        <div class="domanda">
+                            <label for="param-inst-ora-partenza">Ora partenza da azienda</label>
+                            <input type="number" id="param-inst-ora-partenza" min="0" max="24" step="0.5" data-param-inst="ora_partenza_azienda">
+                        </div>
+                        <div class="domanda">
+                            <label for="param-inst-ora-ritorno">Ora rientro in azienda</label>
+                            <input type="number" id="param-inst-ora-ritorno" min="0" max="24" step="0.5" data-param-inst="ora_ritorno_azienda">
+                        </div>
+                        <div class="domanda">
+                            <label for="param-inst-costo-orario-int">Costo orario interno (€/h)</label>
+                            <input type="number" id="param-inst-costo-orario-int" min="0" step="0.01" data-param-inst="costo_orario_interno">
+                        </div>
+                        <div class="domanda">
+                            <label for="param-inst-costo-orario-ext">Costo orario esterno (€/h, solo cantiere)</label>
+                            <input type="number" id="param-inst-costo-orario-ext" min="0" step="0.01" data-param-inst="costo_orario_esterno">
+                        </div>
+                        <div class="domanda">
+                            <label for="param-inst-rimborso-ext">Rimborso giornaliero esterno (€/persona/giorno)</label>
+                            <input type="number" id="param-inst-rimborso-ext" min="0" step="1" data-param-inst="rimborso_giornaliero_esterno">
+                        </div>
+                        <div class="domanda">
+                            <label for="param-inst-extra-trasferta">Supplemento interni trasferta lunga (€/persona/giorno)</label>
+                            <input type="number" id="param-inst-extra-trasferta" min="0" step="1" data-param-inst="costo_extra_giorno_interno_trasferta_lunga">
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Tab Accessori -->
@@ -299,6 +548,96 @@
                 <!-- Tab Gru -->
                 <div class="tab-content" data-tab-content="gru">
                     <div id="tabella-gru-container"></div>
+                </div>
+
+                <!-- Tab Trasferta (database trasferta.json) -->
+                <div class="tab-content" data-tab-content="trasferta">
+                    <div class="parametri-group">
+                        <h3 class="parametri-group-titolo">Giornata lavorativa (pausa pranzo sempre esclusa dai calcoli)</h3>
+                        <div class="domanda">
+                            <label for="param-trf-ora-inizio">Ora inizio</label>
+                            <input type="number" id="param-trf-ora-inizio" step="0.25" min="0" max="24" placeholder="7.5 = 7:30">
+                        </div>
+                        <div class="domanda">
+                            <label for="param-trf-ora-fine">Ora fine</label>
+                            <input type="number" id="param-trf-ora-fine" step="0.25" min="0" max="24">
+                        </div>
+                        <div class="domanda">
+                            <label for="param-trf-pausa">Pausa pranzo (ore)</label>
+                            <input type="number" id="param-trf-pausa" step="0.25" min="0" max="4" value="1">
+                        </div>
+                        <div class="domanda">
+                            <label for="param-trf-pausa-inizio">Inizio fascia pausa (ore, es. 12 = 12:00)</label>
+                            <input type="number" id="param-trf-pausa-inizio" step="0.25" min="0" max="24" value="12">
+                        </div>
+                        <div class="domanda">
+                            <label for="param-trf-pausa-fine">Fine fascia pausa</label>
+                            <input type="number" id="param-trf-pausa-fine" step="0.25" min="0" max="24" value="13">
+                        </div>
+                    </div>
+                    <div class="parametri-group">
+                        <h3 class="parametri-group-titolo">Premio e soglie</h3>
+                        <div class="domanda">
+                            <label for="param-trf-premio">Premio trasferta (€ / tecnico / giorno)</label>
+                            <input type="number" id="param-trf-premio" min="0" step="1" value="50">
+                        </div>
+                        <div class="domanda">
+                            <label for="param-trf-ore-min">Ore minime cantiere stesso giorno di arrivo</label>
+                            <input type="number" id="param-trf-ore-min" min="0" step="0.5" value="3">
+                        </div>
+                        <div class="domanda">
+                            <label for="param-trf-ora-max-rientro">Ora massima rientro a casa (venerdì)</label>
+                            <input type="number" id="param-trf-ora-max-rientro" step="0.25" min="12" max="24" value="18">
+                        </div>
+                    </div>
+                    <div class="parametri-group">
+                        <h3 class="parametri-group-titolo">Mezzo aziendale (€)</h3>
+                        <div class="domanda">
+                            <label for="param-trf-gasolio">€ / litro gasolio</label>
+                            <input type="number" id="param-trf-gasolio" min="0" step="0.01">
+                        </div>
+                        <div class="domanda">
+                            <label for="param-trf-litri">Litri / 100 km</label>
+                            <input type="number" id="param-trf-litri" min="0" step="0.1">
+                        </div>
+                        <div class="domanda">
+                            <label for="param-trf-usura">Usura € / km</label>
+                            <input type="number" id="param-trf-usura" min="0" step="0.01">
+                        </div>
+                        <div class="domanda">
+                            <label for="param-trf-pedaggio">Pedaggio stimato € / km</label>
+                            <input type="number" id="param-trf-pedaggio" min="0" step="0.01">
+                        </div>
+                    </div>
+                    <div class="parametri-group">
+                        <h3 class="parametri-group-titolo">Treno</h3>
+                        <div class="domanda">
+                            <label for="param-trf-treno-biglietto">Costo medio A/R per persona</label>
+                            <input type="number" id="param-trf-treno-biglietto" min="0" step="1">
+                        </div>
+                        <div class="domanda">
+                            <label for="param-trf-treno-taxi">Taxi stazione–cantiere (per tratta, per persona)</label>
+                            <input type="number" id="param-trf-treno-taxi" min="0" step="1">
+                        </div>
+                    </div>
+                    <div class="parametri-group">
+                        <h3 class="parametri-group-titolo">Aereo</h3>
+                        <div class="domanda">
+                            <label for="param-trf-aereo-biglietto">Costo medio A/R per persona</label>
+                            <input type="number" id="param-trf-aereo-biglietto" min="0" step="1">
+                        </div>
+                        <div class="domanda">
+                            <label for="param-trf-aereo-taxi">Taxi aeroporto–cantiere (per tratta, per persona)</label>
+                            <input type="number" id="param-trf-aereo-taxi" min="0" step="1">
+                        </div>
+                    </div>
+                    <div class="parametri-group">
+                        <h3 class="parametri-group-titolo">Hotel</h3>
+                        <div class="domanda">
+                            <label for="param-trf-hotel">€ / notte (stima)</label>
+                            <input type="number" id="param-trf-hotel" min="0" step="1">
+                        </div>
+                    </div>
                 </div>
             </div>
 
