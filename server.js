@@ -33,7 +33,11 @@ app.post('/api/salva/:filename', async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`\n🚀 Server avviato su http://localhost:${PORT}`);
-  console.log(`📝 Puoi modificare i parametri e salvarli sui file JSON\n`);
-});
+if (process.env.VERCEL) {
+  module.exports = app;
+} else {
+  app.listen(PORT, () => {
+    console.log(`\n🚀 Server avviato su http://localhost:${PORT}`);
+    console.log(`📝 Puoi modificare i parametri e salvarli sui file JSON\n`);
+  });
+}
