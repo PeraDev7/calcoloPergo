@@ -55,7 +55,20 @@
   const $ = (sel, root = document) => root.querySelector(sel);
   const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
 
+  const LS_DATA_KEYS = {
+    'costanti.json':  'calcoloPergo_data_costanti',
+    'prodotti.json':  'calcoloPergo_data_prodotti',
+    'trasferta.json': 'calcoloPergo_data_trasferta',
+  };
+
   async function loadJson(path) {
+    const lsKey = LS_DATA_KEYS[path];
+    if (lsKey) {
+      try {
+        const stored = localStorage.getItem(lsKey);
+        if (stored) return JSON.parse(stored);
+      } catch (_) {}
+    }
     const res = await fetch(path);
     if (!res.ok) throw new Error(`Errore caricamento ${path}`);
     return res.json();

@@ -12,7 +12,20 @@
 
   const POSTI_AUTO_STEPS = [...Array(20).keys()].map((i) => i + 1).concat([...Array(8).keys()].map((i) => 30 + (i * 10)));
 
+  const LS_DATA_KEYS = {
+    'prodotti.json':  'calcoloPergo_data_prodotti',
+    'costanti.json':  'calcoloPergo_data_costanti',
+    'trasferta.json': 'calcoloPergo_data_trasferta',
+  };
+
   async function loadJson(path) {
+    const lsKey = LS_DATA_KEYS[path];
+    if (lsKey) {
+      try {
+        const stored = localStorage.getItem(lsKey);
+        if (stored) return JSON.parse(stored);
+      } catch (_) {}
+    }
     const res = await fetch(path);
     if (!res.ok) throw new Error(`Errore caricamento ${path}`);
     return res.json();
@@ -587,16 +600,7 @@
     }
 
     try {
-      const response = await fetch('/api/salva/prodotti.json', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(prodotti, null, 2),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Errore salvataggio: ${response.statusText}`);
-      }
-
+      localStorage.setItem('calcoloPergo_data_prodotti', JSON.stringify(prodotti, null, 2));
       alert('✅ Tutti i prodotti sono stati salvati con successo!');
     } catch (error) {
       console.error('Errore:', error);

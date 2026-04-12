@@ -273,18 +273,20 @@
     }
   }
 
-  async function salvaSuFile(filename, data) {
-    const response = await fetch(`/api/salva/${filename}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data, null, 2),
-    });
-    
-    if (!response.ok) {
-      throw new Error(`Errore salvataggio ${filename}: ${response.statusText}`);
+  function salvaSuFile(filename, data) {
+    const keys = {
+      'costanti.json':  'calcoloPergo_data_costanti',
+      'trasferta.json': 'calcoloPergo_data_trasferta',
+      'prodotti.json':  'calcoloPergo_data_prodotti',
+    };
+    const key = keys[filename];
+    if (!key) return Promise.reject(new Error(`File non gestito: ${filename}`));
+    try {
+      localStorage.setItem(key, JSON.stringify(data));
+    } catch (e) {
+      return Promise.reject(e);
     }
-    
-    return response.json();
+    return Promise.resolve({ success: true });
   }
 
   function init() {
