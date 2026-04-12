@@ -12,6 +12,15 @@
     flex-wrap: wrap;
 }
 
+.btn-rimuovi-card {
+    margin-top: 0.5rem;
+    background: #8b1f1f;
+}
+
+.btn-rimuovi-card:hover {
+    background: #6f1515;
+}
+
 /* ── Filtri ────────────────────────────────────────────── */
 .filtri-section {
     margin-bottom: 1.5rem;
@@ -162,6 +171,23 @@
     margin-top: 1rem;
 }
 
+.ore-generator-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 0.75rem;
+    margin: 0.5rem 0 1rem;
+    align-items: end;
+}
+
+.domanda-azioni-inline {
+    display: flex;
+    align-items: end;
+}
+
+.domanda-azioni-inline .btn {
+    width: 100%;
+}
+
 .ore-posto-item {
     background: var(--bg);
     border: 2px solid var(--border);
@@ -231,6 +257,16 @@
     color: #c09000;
 }
 
+.ore-posto-peso-calc {
+    padding: 0.45rem 0.5rem;
+    border: 1px dashed var(--border);
+    border-radius: 6px;
+    text-align: center;
+    font-weight: 700;
+    color: #956c00;
+    background: #fff9e9;
+}
+
 /* ── Accessori Grid ────────────────────────────────────── */
 .accessori-grid {
     display: grid;
@@ -285,6 +321,25 @@
     font-size: 0.75rem;
     color: var(--secondary);
     text-align: center;
+}
+
+.accessorio-extra-row {
+    margin-top: 0.6rem;
+}
+
+.accessorio-extra-label {
+    display: block;
+    margin-bottom: 0.25rem;
+    font-size: 0.78rem;
+    color: var(--secondary);
+    font-weight: 600;
+}
+
+.accessorio-check {
+    margin-top: 0.6rem;
+    display: block;
+    font-size: 0.8rem;
+    color: var(--text);
 }
 
 /* ── Messaggio Vuoto ───────────────────────────────────── */

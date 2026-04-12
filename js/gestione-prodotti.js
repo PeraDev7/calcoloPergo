@@ -10,6 +10,8 @@
   let prodottoCorrente = null;
   let prodottoCorrenteIndex = -1;
 
+  const POSTI_AUTO_STEPS = [...Array(20).keys()].map((i) => i + 1).concat([...Array(8).keys()].map((i) => 30 + (i * 10)));
+
   async function loadJson(path) {
     const res = await fetch(path);
     if (!res.ok) throw new Error(`Errore caricamento ${path}`);
@@ -22,6 +24,8 @@
         loadJson('prodotti.json'),
         loadJson('acessori.json').catch(() => []),
       ]);
+
+      prodotti = (prodotti || []).map(normalizzaProdotto);
       
       renderListaProdotti();
       bindEvents();
@@ -64,11 +68,112 @@
     
     msgVuoto.hidden = true;
 
-    prodottiFiltrati.forEach((prodotto, idx) => {
+    prodottiFiltrati.forEach((prodotto) => {
       const realIndex = prodotti.indexOf(prodotto);
       const card = createProdottoCard(prodotto, realIndex);
       container.appendChild(card);
     });
+  }
+
+  function normalizzaNumero(v, def = 0) {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : def;
+  }
+
+  function normalizzaProdotto(p) {
+    const out = JSON.parse(JSON.stringify(p || {}));
+    out.MODELLO_STRUTTURA = String(out.MODELLO_STRUTTURA || '').trim() || 'NUOVO MODELLO';
+    out['POSTI AUTO'] = Math.min(100, Math.max(1, parseInt(out['POSTI AUTO'], 10) || 1));
+
+    const kg1 = Math.max(0, normalizzaNumero(out.KG_1PA, normalizzaNumero(out.KG, 0)));
+    out.KG = kg1;
+    out.KG_1PA = kg1;
+
+    POSTI_AUTO_STEPS.forEach((posti) => {
+      const keyOre = `ORE_INSTALLAZIONE_${posti}PA`;
+      const keyKg = `KG_${posti}PA`;
+      if (posti === 1 && (out[keyOre] == null || Number.isNaN(Number(out[keyOre])))) {
+        out[keyOre] = normalizzaNumero(out.ORE_INSTALLAZIONE_1PA, 0);
+      }
+      if (posti > 1 && out[keyOre] == null) out[keyOre] = null;
+      out[keyKg] = Math.round(kg1 * posti);
+    });
+
+    out.ORE_INSTALLAZIONE_1PA = normalizzaNumero(out.ORE_INSTALLAZIONE_1PA, out.ORE_INSTALLAZIONE_1PA == null ? 0 : Number(out.ORE_INSTALLAZIONE_1PA));
+    out.bilico_13mt_senza_zavorre = Math.max(0, parseInt(out.bilico_13mt_senza_zavorre ?? out.bilico_13mt, 10) || 0);
+    out.bilico_13mt_con_zavorre = Math.max(0, parseInt(out.bilico_13mt_con_zavorre ?? out.bilico_13mt_senza_zavorre, 10) || 0);
+    out.bilico_13mt = out.bilico_13mt_senza_zavorre;
+    out.camion_gru = Math.max(0, parseInt(out.camion_gru, 10) || 0);
+    out.nostro_mezzo = Math.max(0, parseInt(out.nostro_mezzo, 10) || 0);
+
+    accessori.forEach((acc) => {
+      const codice = acc?.nome_prodotti;
+      if (!codice) return;
+      const keyOre = `ORE_INSTALLAZIONE_${codice}`;
+      const keyPeso = `PESO_ACCESSORIO_${codice}`;
+      const keyPers = `CONSEGNA_PERSONALIZZATA_${codice}`;
+      const keyCarico = `ACCESSORIO_GESTIONE_CARICO_${codice}`;
+      const keyTipo = `ACCESSORIO_TIPO_CALCOLO_${codice}`;
+      const keyCapBil = `ACCESSORIO_CAP_BILICO_${codice}`;
+      const keyCapNostro = `ACCESSORIO_CAP_NOSTRO_MEZZO_${codice}`;
+      const keyCapCam = `ACCESSORIO_CAP_CAMION_GRU_${codice}`;
+
+      const codiceUpper = String(codice).toUpperCase();
+      const defaultCarico = ['ZAVORRE', 'PF', 'PANNELLI_COIBENTATI'].includes(codiceUpper);
+
+      if (out[keyOre] == null || Number.isNaN(Number(out[keyOre]))) out[keyOre] = 0;
+      if (out[keyPeso] == null || Number.isNaN(Number(out[keyPeso]))) out[keyPeso] = 0;
+      out[keyPers] = out[keyPers] === true;
+      out[keyCarico] = out[keyCarico] === true || out[keyPers] === true || defaultCarico;
+      out[keyTipo] = String(out[keyTipo] || 'per_posto_auto').toLowerCase() === 'per_pz' ? 'per_pz' : 'per_posto_auto';
+      out[keyCapBil] = Math.max(0, parseInt(out[keyCapBil], 10) || 0);
+      out[keyCapNostro] = Math.max(0, parseInt(out[keyCapNostro], 10) || 0);
+      out[keyCapCam] = Math.max(0, parseInt(out[keyCapCam], 10) || 0);
+    });
+
+    return out;
+  }
+
+  function getNextNuovoModelloNome() {
+    let n = 1;
+    while (true) {
+      const nome = `NUOVO MODELLO ${n}`;
+      const exists = prodotti.some((p) => String(p.MODELLO_STRUTTURA || '').toUpperCase() === nome.toUpperCase());
+      if (!exists) return nome;
+      n += 1;
+    }
+  }
+
+  function creaProdottoVuoto() {
+    const p = {
+      MODELLO_STRUTTURA: getNextNuovoModelloNome(),
+      ORE_INSTALLAZIONE_1PA: 0,
+      'POSTI AUTO': 1,
+      KG: 0,
+      KG_1PA: 0,
+      bilico_13mt_senza_zavorre: 0,
+      bilico_13mt_con_zavorre: 0,
+      bilico_13mt: 0,
+      camion_gru: 0,
+      nostro_mezzo: 0,
+    };
+    POSTI_AUTO_STEPS.forEach((posti) => {
+      p[`ORE_INSTALLAZIONE_${posti}PA`] = posti === 1 ? 0 : null;
+      p[`KG_${posti}PA`] = 0;
+    });
+    accessori.forEach((acc) => {
+      const codice = acc?.nome_prodotti;
+      if (!codice) return;
+      p[`ORE_INSTALLAZIONE_${codice}`] = 0;
+      p[`PESO_ACCESSORIO_${codice}`] = 0;
+      p[`CONSEGNA_PERSONALIZZATA_${codice}`] = false;
+      p[`ACCESSORIO_GESTIONE_CARICO_${codice}`] = false;
+      p[`ACCESSORIO_TIPO_CALCOLO_${codice}`] = 'per_posto_auto';
+      p[`ACCESSORIO_CAP_BILICO_${codice}`] = 0;
+      p[`ACCESSORIO_CAP_NOSTRO_MEZZO_${codice}`] = 0;
+      p[`ACCESSORIO_CAP_CAMION_GRU_${codice}`] = 0;
+    });
+    return normalizzaProdotto(p);
   }
 
   function createProdottoCard(prodotto, index) {
@@ -97,7 +202,7 @@
     const infoOre = createInfoItem('Ore base (1 PA)', `${prodotto.ORE_INSTALLAZIONE_1PA || 0} h`);
     const pesoDisplay = prodotto.KG_1PA || prodotto.KG || 0;
     const infoKg = createInfoItem('Peso (1 PA)', `${pesoDisplay} kg`);
-    const infoBilico = createInfoItem('Bilico 13mt', prodotto.bilico_13mt || 0);
+    const infoBilico = createInfoItem('Bilico 13mt (senza/con zavorre)', `${prodotto.bilico_13mt_senza_zavorre || 0} / ${prodotto.bilico_13mt_con_zavorre || 0}`);
 
     info.appendChild(infoOre);
     info.appendChild(infoKg);
@@ -114,6 +219,15 @@
       apriModalProdotto(index);
     });
     footer.appendChild(btnModifica);
+
+    const btnRimuovi = document.createElement('button');
+    btnRimuovi.className = 'btn-modifica btn-rimuovi-card';
+    btnRimuovi.textContent = 'Elimina';
+    btnRimuovi.addEventListener('click', (e) => {
+      e.stopPropagation();
+      eliminaProdotto(index);
+    });
+    footer.appendChild(btnRimuovi);
     card.appendChild(footer);
 
     card.addEventListener('click', () => apriModalProdotto(index));
@@ -162,12 +276,18 @@
   function popolaModalProdotto() {
     if (!prodottoCorrente) return;
 
+    $('#edit-modello').value = prodottoCorrente.MODELLO_STRUTTURA || '';
     $('#edit-ore-1pa').value = prodottoCorrente.ORE_INSTALLAZIONE_1PA || 0;
     $('#edit-posti-auto').value = prodottoCorrente['POSTI AUTO'] || 1;
-    $('#edit-kg').value = prodottoCorrente.KG || 0;
-    $('#edit-bilico').value = prodottoCorrente.bilico_13mt || 0;
+    $('#edit-kg').value = prodottoCorrente.KG_1PA || prodottoCorrente.KG || 0;
+    $('#edit-bilico').value = prodottoCorrente.bilico_13mt_senza_zavorre || 0;
+    $('#edit-bilico-zavorre').value = prodottoCorrente.bilico_13mt_con_zavorre || 0;
     $('#edit-camion-gru').value = prodottoCorrente.camion_gru || 0;
     $('#edit-nostro-mezzo').value = prodottoCorrente.nostro_mezzo || 0;
+
+    $('#gen-ore-base').value = prodottoCorrente.ORE_INSTALLAZIONE_1PA || 0;
+    $('#gen-ore-incremento').value = 0;
+    $('#gen-max-posti').value = 100;
 
     popolaOrePosti();
     popolaAccessori();
@@ -179,7 +299,8 @@
 
     container.innerHTML = '';
 
-    for (let i = 1; i <= 20; i++) {
+    const kg1 = Math.max(0, parseFloat($('#edit-kg')?.value) || prodottoCorrente.KG_1PA || 0);
+    POSTI_AUTO_STEPS.forEach((i) => {
       const item = document.createElement('div');
       item.className = 'ore-posto-item';
 
@@ -190,7 +311,6 @@
       const fields = document.createElement('div');
       fields.className = 'ore-posto-fields';
 
-      // Campo Ore
       const fieldOre = document.createElement('div');
       fieldOre.className = 'ore-posto-field';
       
@@ -214,32 +334,16 @@
       fieldOre.appendChild(labelOre);
       fieldOre.appendChild(inputOre);
 
-      // Campo Peso
       const fieldPeso = document.createElement('div');
       fieldPeso.className = 'ore-posto-field';
-      
       const labelPeso = document.createElement('label');
       labelPeso.className = 'ore-posto-field-label';
-      labelPeso.textContent = 'Peso (kg)';
-      labelPeso.setAttribute('for', `peso-posto-${i}`);
-      
-      const inputPeso = document.createElement('input');
-      inputPeso.type = 'number';
-      inputPeso.className = 'ore-posto-input peso-input';
-      inputPeso.id = `peso-posto-${i}`;
-      inputPeso.step = '1';
-      inputPeso.min = '0';
-      inputPeso.placeholder = '0';
-      
-      const fieldNamePeso = `KG_${i}PA`;
-      // Calcolo peso approssimativo se non presente
-      const pesoBase = prodottoCorrente.KG || 300;
-      const pesoApprossimativo = Math.round(pesoBase * i * 0.9); // 90% del peso lineare
-      inputPeso.value = prodottoCorrente[fieldNamePeso] || 
-                        (i === 1 ? pesoBase : pesoApprossimativo);
-
+      labelPeso.textContent = 'Peso calcolato';
+      const pesoVal = document.createElement('div');
+      pesoVal.className = 'ore-posto-peso-calc';
+      pesoVal.textContent = `${Math.round(kg1 * i)} kg`;
       fieldPeso.appendChild(labelPeso);
-      fieldPeso.appendChild(inputPeso);
+      fieldPeso.appendChild(pesoVal);
 
       fields.appendChild(fieldOre);
       fields.appendChild(fieldPeso);
@@ -247,7 +351,7 @@
       item.appendChild(label);
       item.appendChild(fields);
       container.appendChild(item);
-    }
+    });
   }
 
   function popolaAccessori() {
@@ -256,34 +360,141 @@
 
     container.innerHTML = '';
 
-    accessori.forEach(acc => {
+    accessori.forEach((acc) => {
+      const codice = acc.nome_prodotti;
+      if (!codice) return;
       const item = document.createElement('div');
       item.className = 'accessorio-item-edit';
 
       const label = document.createElement('label');
       label.className = 'accessorio-nome';
-      label.textContent = acc.nome || acc.nome_prodotti;
-      label.setAttribute('for', `acc-${acc.nome_prodotti}`);
+      label.textContent = acc.nome || codice;
+      label.setAttribute('for', `acc-${codice}`);
 
       const input = document.createElement('input');
       input.type = 'number';
       input.className = 'accessorio-input';
-      input.id = `acc-${acc.nome_prodotti}`;
+      input.id = `acc-${codice}`;
       input.step = '0.1';
       input.min = '0';
       input.placeholder = '0.0';
 
-      const fieldName = `ORE_INSTALLAZIONE_${acc.nome_prodotti}`;
+      const fieldName = `ORE_INSTALLAZIONE_${codice}`;
       input.value = prodottoCorrente[fieldName] || 0;
 
       const hint = document.createElement('span');
       hint.className = 'accessorio-hint';
-      hint.textContent = 'ore';
+      hint.textContent = 'Ore installazione';
+
+      const pesoWrap = document.createElement('div');
+      pesoWrap.className = 'accessorio-extra-row';
+      const pesoLabel = document.createElement('label');
+      pesoLabel.className = 'accessorio-extra-label';
+      pesoLabel.setAttribute('for', `acc-peso-${codice}`);
+      pesoLabel.textContent = 'Peso accessorio (kg)';
+      const pesoInput = document.createElement('input');
+      pesoInput.type = 'number';
+      pesoInput.className = 'accessorio-input';
+      pesoInput.id = `acc-peso-${codice}`;
+      pesoInput.min = '0';
+      pesoInput.step = '0.1';
+      pesoInput.value = prodottoCorrente[`PESO_ACCESSORIO_${codice}`] || 0;
+      pesoWrap.appendChild(pesoLabel);
+      pesoWrap.appendChild(pesoInput);
+
+      const chkWrap = document.createElement('label');
+      chkWrap.className = 'accessorio-check';
+      const chk = document.createElement('input');
+      chk.type = 'checkbox';
+      chk.id = `acc-consegna-${codice}`;
+      chk.checked = prodottoCorrente[`ACCESSORIO_GESTIONE_CARICO_${codice}`] === true || prodottoCorrente[`CONSEGNA_PERSONALIZZATA_${codice}`] === true;
+      chkWrap.appendChild(chk);
+      chkWrap.appendChild(document.createTextNode(' Soggetto a gestione del carico'));
+
+      const tipoWrap = document.createElement('div');
+      tipoWrap.className = 'accessorio-extra-row';
+      const tipoLabel = document.createElement('label');
+      tipoLabel.className = 'accessorio-extra-label';
+      tipoLabel.setAttribute('for', `acc-tipo-${codice}`);
+      tipoLabel.textContent = 'Tipo calcolo';
+      const tipoSel = document.createElement('select');
+      tipoSel.id = `acc-tipo-${codice}`;
+      tipoSel.className = 'filtro-select';
+      tipoSel.innerHTML = '<option value="per_posto_auto">Correlato ai posti auto</option><option value="per_pz">Calcolato a pezzi</option>';
+      tipoSel.value = prodottoCorrente[`ACCESSORIO_TIPO_CALCOLO_${codice}`] === 'per_pz' ? 'per_pz' : 'per_posto_auto';
+      tipoWrap.appendChild(tipoLabel);
+      tipoWrap.appendChild(tipoSel);
+
+      const capWrap = document.createElement('div');
+      capWrap.className = 'accessorio-extra-row';
+      const capBilLabel = document.createElement('label');
+      capBilLabel.className = 'accessorio-extra-label';
+      capBilLabel.setAttribute('for', `acc-cap-bil-${codice}`);
+      capBilLabel.textContent = 'Capacità su Bilico';
+      const capBil = document.createElement('input');
+      capBil.type = 'number';
+      capBil.min = '0';
+      capBil.step = '1';
+      capBil.className = 'accessorio-input';
+      capBil.id = `acc-cap-bil-${codice}`;
+      capBil.value = prodottoCorrente[`ACCESSORIO_CAP_BILICO_${codice}`] || 0;
+
+      const capNostLabel = document.createElement('label');
+      capNostLabel.className = 'accessorio-extra-label';
+      capNostLabel.setAttribute('for', `acc-cap-nostro-${codice}`);
+      capNostLabel.textContent = 'Capacità su Nostro mezzo';
+      const capNost = document.createElement('input');
+      capNost.type = 'number';
+      capNost.min = '0';
+      capNost.step = '1';
+      capNost.className = 'accessorio-input';
+      capNost.id = `acc-cap-nostro-${codice}`;
+      capNost.value = prodottoCorrente[`ACCESSORIO_CAP_NOSTRO_MEZZO_${codice}`] || 0;
+
+      const capCamLabel = document.createElement('label');
+      capCamLabel.className = 'accessorio-extra-label';
+      capCamLabel.setAttribute('for', `acc-cap-camion-${codice}`);
+      capCamLabel.textContent = 'Capacità su Camion con gru';
+      const capCam = document.createElement('input');
+      capCam.type = 'number';
+      capCam.min = '0';
+      capCam.step = '1';
+      capCam.className = 'accessorio-input';
+      capCam.id = `acc-cap-camion-${codice}`;
+      capCam.value = prodottoCorrente[`ACCESSORIO_CAP_CAMION_GRU_${codice}`] || 0;
+
+      capWrap.appendChild(capBilLabel);
+      capWrap.appendChild(capBil);
+      capWrap.appendChild(capNostLabel);
+      capWrap.appendChild(capNost);
+      capWrap.appendChild(capCamLabel);
+      capWrap.appendChild(capCam);
 
       item.appendChild(label);
       item.appendChild(input);
       item.appendChild(hint);
+      item.appendChild(pesoWrap);
+      item.appendChild(chkWrap);
+      item.appendChild(tipoWrap);
+      item.appendChild(capWrap);
       container.appendChild(item);
+    });
+  }
+
+  function generaElencoOrePosti() {
+    const base = Math.max(0, parseFloat($('#gen-ore-base')?.value) || 0);
+    const incremento = parseFloat($('#gen-ore-incremento')?.value) || 0;
+    const maxPosti = Math.max(1, Math.min(100, parseInt($('#gen-max-posti')?.value, 10) || 100));
+
+    POSTI_AUTO_STEPS.forEach((i) => {
+      const inputOre = $(`#ore-posto-${i}`);
+      if (!inputOre) return;
+      if (i <= maxPosti) {
+        const v = Math.round((base + ((i - 1) * incremento)) * 1000) / 1000;
+        inputOre.value = Math.max(0, v);
+      } else {
+        inputOre.value = '';
+      }
     });
   }
 
@@ -299,40 +510,73 @@
   function salvaProdottoCorrente() {
     if (!prodottoCorrente || prodottoCorrenteIndex === -1) return;
 
+    prodottoCorrente.MODELLO_STRUTTURA = ($('#edit-modello')?.value || '').trim() || 'NUOVO MODELLO';
     prodottoCorrente.ORE_INSTALLAZIONE_1PA = parseFloat($('#edit-ore-1pa').value) || 0;
-    prodottoCorrente['POSTI AUTO'] = parseInt($('#edit-posti-auto').value) || 1;
-    prodottoCorrente.KG = parseFloat($('#edit-kg').value) || 0;
-    prodottoCorrente.bilico_13mt = parseInt($('#edit-bilico').value) || 0;
+    prodottoCorrente['POSTI AUTO'] = Math.min(100, Math.max(1, parseInt($('#edit-posti-auto').value, 10) || 1));
+    const kg1 = Math.max(0, parseFloat($('#edit-kg').value) || 0);
+    prodottoCorrente.KG = kg1;
+    prodottoCorrente.KG_1PA = kg1;
+    prodottoCorrente.bilico_13mt_senza_zavorre = parseInt($('#edit-bilico').value, 10) || 0;
+    prodottoCorrente.bilico_13mt_con_zavorre = parseInt($('#edit-bilico-zavorre').value, 10) || 0;
+    prodottoCorrente.bilico_13mt = prodottoCorrente.bilico_13mt_senza_zavorre;
     prodottoCorrente.camion_gru = parseInt($('#edit-camion-gru').value) || 0;
     prodottoCorrente.nostro_mezzo = parseInt($('#edit-nostro-mezzo').value) || 0;
 
-    for (let i = 1; i <= 20; i++) {
+    POSTI_AUTO_STEPS.forEach((i) => {
       const inputOre = $(`#ore-posto-${i}`);
-      const inputPeso = $(`#peso-posto-${i}`);
       
       if (inputOre) {
         const fieldNameOre = `ORE_INSTALLAZIONE_${i}PA`;
-        prodottoCorrente[fieldNameOre] = parseFloat(inputOre.value) || 0;
+        const v = inputOre.value.trim();
+        prodottoCorrente[fieldNameOre] = v === '' ? null : (parseFloat(v) || 0);
       }
-      
-      if (inputPeso) {
-        const fieldNamePeso = `KG_${i}PA`;
-        prodottoCorrente[fieldNamePeso] = parseInt(inputPeso.value) || 0;
-      }
-    }
-
-    accessori.forEach(acc => {
-      const input = $(`#acc-${acc.nome_prodotti}`);
-      if (input) {
-        const fieldName = `ORE_INSTALLAZIONE_${acc.nome_prodotti}`;
-        prodottoCorrente[fieldName] = parseFloat(input.value) || 0;
-      }
+      prodottoCorrente[`KG_${i}PA`] = Math.round(kg1 * i);
     });
 
-    prodotti[prodottoCorrenteIndex] = prodottoCorrente;
+    accessori.forEach((acc) => {
+      const codice = acc?.nome_prodotti;
+      if (!codice) return;
+      const input = $(`#acc-${codice}`);
+      const inputPeso = $(`#acc-peso-${codice}`);
+      const chkPers = $(`#acc-consegna-${codice}`);
+      const tipoSel = $(`#acc-tipo-${codice}`);
+      const capBil = $(`#acc-cap-bil-${codice}`);
+      const capNostro = $(`#acc-cap-nostro-${codice}`);
+      const capCam = $(`#acc-cap-camion-${codice}`);
+      if (input) {
+        const fieldName = `ORE_INSTALLAZIONE_${codice}`;
+        prodottoCorrente[fieldName] = parseFloat(input.value) || 0;
+      }
+      prodottoCorrente[`PESO_ACCESSORIO_${codice}`] = inputPeso ? (parseFloat(inputPeso.value) || 0) : 0;
+      prodottoCorrente[`ACCESSORIO_GESTIONE_CARICO_${codice}`] = chkPers?.checked === true;
+      prodottoCorrente[`CONSEGNA_PERSONALIZZATA_${codice}`] = chkPers?.checked === true;
+      prodottoCorrente[`ACCESSORIO_TIPO_CALCOLO_${codice}`] = tipoSel?.value === 'per_pz' ? 'per_pz' : 'per_posto_auto';
+      prodottoCorrente[`ACCESSORIO_CAP_BILICO_${codice}`] = capBil ? (parseInt(capBil.value, 10) || 0) : 0;
+      prodottoCorrente[`ACCESSORIO_CAP_NOSTRO_MEZZO_${codice}`] = capNostro ? (parseInt(capNostro.value, 10) || 0) : 0;
+      prodottoCorrente[`ACCESSORIO_CAP_CAMION_GRU_${codice}`] = capCam ? (parseInt(capCam.value, 10) || 0) : 0;
+    });
+
+    prodotti[prodottoCorrenteIndex] = normalizzaProdotto(prodottoCorrente);
     
     chiudiModalProdotto();
     renderListaProdotti();
+  }
+
+  function eliminaProdotto(index) {
+    if (index < 0 || index >= prodotti.length) return;
+    const nome = prodotti[index]?.MODELLO_STRUTTURA || `#${index + 1}`;
+    const ok = confirm(`Eliminare il prodotto "${nome}"?`);
+    if (!ok) return;
+    prodotti.splice(index, 1);
+    renderListaProdotti();
+    if (prodottoCorrenteIndex === index) chiudiModalProdotto();
+  }
+
+  function aggiungiProdotto() {
+    const nuovo = creaProdottoVuoto();
+    prodotti.push(nuovo);
+    renderListaProdotti();
+    apriModalProdotto(prodotti.length - 1);
   }
 
   async function salvaTuttoProdotti() {
@@ -370,6 +614,9 @@
     const btnSalvaProdotto = $('#btn-salva-prodotto');
     const btnAnnullaProdotto = $('#btn-annulla-prodotto');
     const btnSalvaTutto = $('#btn-salva-tutto');
+    const btnAggiungiProdotto = $('#btn-aggiungi-prodotto');
+    const btnEliminaProdotto = $('#btn-elimina-prodotto');
+    const btnGeneraOrePosti = $('#btn-genera-ore-posti');
     const searchInput = $('#search-prodotti');
     const filtroSelect = $('#filtro-posti');
     const modalOverlay = $('.modal-overlay');
@@ -379,6 +626,9 @@
     if (modalOverlay) modalOverlay.addEventListener('click', chiudiModalProdotto);
     if (btnSalvaProdotto) btnSalvaProdotto.addEventListener('click', salvaProdottoCorrente);
     if (btnSalvaTutto) btnSalvaTutto.addEventListener('click', salvaTuttoProdotti);
+    if (btnAggiungiProdotto) btnAggiungiProdotto.addEventListener('click', aggiungiProdotto);
+    if (btnEliminaProdotto) btnEliminaProdotto.addEventListener('click', () => eliminaProdotto(prodottoCorrenteIndex));
+    if (btnGeneraOrePosti) btnGeneraOrePosti.addEventListener('click', generaElencoOrePosti);
 
     if (searchInput) {
       searchInput.addEventListener('input', () => {
@@ -390,6 +640,15 @@
     if (filtroSelect) {
       filtroSelect.addEventListener('change', renderListaProdotti);
     }
+
+    $('#edit-kg')?.addEventListener('input', popolaOrePosti);
+    $('#edit-ore-1pa')?.addEventListener('input', () => {
+      const v = parseFloat($('#edit-ore-1pa')?.value) || 0;
+      const first = $('#ore-posto-1');
+      if (first) first.value = v;
+      const g = $('#gen-ore-base');
+      if (g) g.value = v;
+    });
 
     $$('.modal-tab').forEach(tab => {
       tab.addEventListener('click', () => {

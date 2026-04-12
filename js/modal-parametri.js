@@ -7,9 +7,6 @@
 
   let modalState = {
     costanti: null,
-    accessori: [],
-    trasporti: [],
-    gru: [],
     trasferta: null,
   };
 
@@ -39,15 +36,9 @@
     if (!window.APP_STATE) return;
     
     modalState.costanti = JSON.parse(JSON.stringify(window.APP_STATE.costanti || {}));
-    modalState.accessori = JSON.parse(JSON.stringify(window.APP_STATE.accessori || []));
-    modalState.trasporti = JSON.parse(JSON.stringify(window.APP_STATE.trasporti || []));
-    modalState.gru = JSON.parse(JSON.stringify(window.APP_STATE.gru || []));
     modalState.trasferta = JSON.parse(JSON.stringify(window.APP_STATE.trasfertaConfig || {}));
 
     popolaTabCostanti();
-    popolaTabAccessori();
-    popolaTabTrasporti();
-    popolaTabGru();
     popolaTabTrasferta();
   }
 
@@ -113,140 +104,20 @@
     setTrm('#param-trm-usura', 'nostro_mezzo_eur_km_usura', defTrm.nostro_mezzo_eur_km_usura);
     setTrm('#param-trm-bilico', 'bilico_eur_km', defTrm.bilico_eur_km);
     setTrm('#param-trm-camion-gru', 'camion_gru_eur_km', defTrm.camion_gru_eur_km);
+
+    const pr = modalState.costanti?.parametri_ricarichi || {};
+    const setRic = (id, k, def) => {
+      const el = $(id);
+      if (el) el.value = pr[k] != null && pr[k] !== '' ? pr[k] : def;
+    };
+    setRic('#param-ricarico-generale-pct', 'ricarico_generale_pct', 0);
+    setRic('#param-ricarico-ore-pct', 'ricarico_ore_lavoro_pct', 0);
+    setRic('#param-ricarico-trasporti-pct', 'ricarico_trasporti_pct', 0);
+    setRic('#param-ricarico-noleggi-pct', 'ricarico_noleggi_pct', 0);
+
     const pctSic = modalState.costanti?.sicurezza_percentuale_auto;
     const elPct = $('#param-sicurezza-pct');
-    if (elPct) el.value = pctSic != null && pctSic !== '' ? pctSic : 5;
-  }
-
-  function popolaTabAccessori() {
-    const container = $('#tabella-accessori-container');
-    if (!container || !modalState.accessori.length) return;
-
-    const table = document.createElement('table');
-    table.className = 'tabella-editable';
-    
-    const thead = document.createElement('thead');
-    const headerRow = document.createElement('tr');
-    ['Nome', 'Nome Prodotti'].forEach(label => {
-      const th = document.createElement('th');
-      th.textContent = label;
-      headerRow.appendChild(th);
-    });
-    thead.appendChild(headerRow);
-    table.appendChild(thead);
-
-    const tbody = document.createElement('tbody');
-    modalState.accessori.forEach((acc, idx) => {
-      const row = document.createElement('tr');
-      
-      const tdNome = document.createElement('td');
-      const inputNome = document.createElement('input');
-      inputNome.type = 'text';
-      inputNome.value = acc.nome || '';
-      inputNome.dataset.idx = idx;
-      inputNome.dataset.campo = 'nome';
-      tdNome.appendChild(inputNome);
-      row.appendChild(tdNome);
-      
-      const tdNomeProd = document.createElement('td');
-      const inputNomeProd = document.createElement('input');
-      inputNomeProd.type = 'text';
-      inputNomeProd.value = acc.nome_prodotti || '';
-      inputNomeProd.dataset.idx = idx;
-      inputNomeProd.dataset.campo = 'nome_prodotti';
-      tdNomeProd.appendChild(inputNomeProd);
-      row.appendChild(tdNomeProd);
-      
-      tbody.appendChild(row);
-    });
-    table.appendChild(tbody);
-    
-    container.innerHTML = '';
-    container.appendChild(table);
-  }
-
-  function popolaTabTrasporti() {
-    const container = $('#tabella-trasporti-container');
-    if (!container || !modalState.trasporti.length) return;
-
-    const campi = Object.keys(modalState.trasporti[0]);
-    
-    const table = document.createElement('table');
-    table.className = 'tabella-editable';
-    
-    const thead = document.createElement('thead');
-    const headerRow = document.createElement('tr');
-    campi.forEach(campo => {
-      const th = document.createElement('th');
-      th.textContent = campo.replace(/_/g, ' ');
-      headerRow.appendChild(th);
-    });
-    thead.appendChild(headerRow);
-    table.appendChild(thead);
-
-    const tbody = document.createElement('tbody');
-    modalState.trasporti.forEach((trasp, idx) => {
-      const row = document.createElement('tr');
-      
-      campi.forEach(campo => {
-        const td = document.createElement('td');
-        const input = document.createElement('input');
-        input.type = 'text';
-        input.value = trasp[campo] != null ? trasp[campo] : '';
-        input.dataset.idx = idx;
-        input.dataset.campo = campo;
-        td.appendChild(input);
-        row.appendChild(td);
-      });
-      
-      tbody.appendChild(row);
-    });
-    table.appendChild(tbody);
-    
-    container.innerHTML = '';
-    container.appendChild(table);
-  }
-
-  function popolaTabGru() {
-    const container = $('#tabella-gru-container');
-    if (!container || !modalState.gru.length) return;
-
-    const campi = Object.keys(modalState.gru[0]);
-    
-    const table = document.createElement('table');
-    table.className = 'tabella-editable';
-    
-    const thead = document.createElement('thead');
-    const headerRow = document.createElement('tr');
-    campi.forEach(campo => {
-      const th = document.createElement('th');
-      th.textContent = campo.replace(/_/g, ' ');
-      headerRow.appendChild(th);
-    });
-    thead.appendChild(headerRow);
-    table.appendChild(thead);
-
-    const tbody = document.createElement('tbody');
-    modalState.gru.forEach((g, idx) => {
-      const row = document.createElement('tr');
-      
-      campi.forEach(campo => {
-        const td = document.createElement('td');
-        const input = document.createElement('input');
-        input.type = 'text';
-        input.value = g[campo] != null ? g[campo] : '';
-        input.dataset.idx = idx;
-        input.dataset.campo = campo;
-        td.appendChild(input);
-        row.appendChild(td);
-      });
-      
-      tbody.appendChild(row);
-    });
-    table.appendChild(tbody);
-    
-    container.innerHTML = '';
-    container.appendChild(table);
+    if (elPct) elPct.value = pctSic != null && pctSic !== '' ? pctSic : 5;
   }
 
   function popolaTabTrasferta() {
@@ -269,6 +140,8 @@
     setN('#param-trf-premio', t.premio_trasferta_euro_per_tecnico_per_giorno, 50);
     setN('#param-trf-ore-min', t.ore_minime_cantiere_stesso_giorno_trasferta, 3);
     setN('#param-trf-ora-max-rientro', t.ora_massima_rientro_casa, 18);
+    setN('#param-trf-ora-inizio-viaggio', t.ora_inizio_giornata_viaggio, 7);
+    setN('#param-trf-ora-fine-viaggio', t.ora_fine_giornata_viaggio, 19);
     setN('#param-trf-gasolio', m.eur_litro_gasolio, 1.75);
     setN('#param-trf-litri', m.litri_100km, 8);
     setN('#param-trf-usura', m.usura_euro_km, 0.12);
@@ -313,6 +186,12 @@
       bilico_eur_km: parseFloat($('#param-trm-bilico')?.value) || 2.2,
       camion_gru_eur_km: parseFloat($('#param-trm-camion-gru')?.value) || 2,
     };
+    modalState.costanti.parametri_ricarichi = {
+      ricarico_generale_pct: parseFloat($('#param-ricarico-generale-pct')?.value) || 0,
+      ricarico_ore_lavoro_pct: parseFloat($('#param-ricarico-ore-pct')?.value) || 0,
+      ricarico_trasporti_pct: parseFloat($('#param-ricarico-trasporti-pct')?.value) || 0,
+      ricarico_noleggi_pct: parseFloat($('#param-ricarico-noleggi-pct')?.value) || 0,
+    };
     modalState.costanti.sicurezza_percentuale_auto = parseFloat($('#param-sicurezza-pct')?.value);
     if (!Number.isFinite(modalState.costanti.sicurezza_percentuale_auto)) modalState.costanti.sicurezza_percentuale_auto = 5;
 
@@ -331,32 +210,6 @@
       Object.assign(window.APP_STATE.parametri, modalState.costanti.parametri_installazione);
     }
 
-    $$('#tabella-accessori-container input').forEach(input => {
-      const idx = parseInt(input.dataset.idx, 10);
-      const campo = input.dataset.campo;
-      if (modalState.accessori[idx]) {
-        modalState.accessori[idx][campo] = input.value.trim();
-      }
-    });
-
-    $$('#tabella-trasporti-container input').forEach(input => {
-      const idx = parseInt(input.dataset.idx, 10);
-      const campo = input.dataset.campo;
-      const val = input.value.trim();
-      if (modalState.trasporti[idx]) {
-        modalState.trasporti[idx][campo] = val === '' ? null : (isNaN(val) ? val : parseFloat(val));
-      }
-    });
-
-    $$('#tabella-gru-container input').forEach(input => {
-      const idx = parseInt(input.dataset.idx, 10);
-      const campo = input.dataset.campo;
-      const val = input.value.trim();
-      if (modalState.gru[idx]) {
-        modalState.gru[idx][campo] = val === '' ? null : (isNaN(val) ? val : parseFloat(val));
-      }
-    });
-
     modalState.trasferta = {
       giornata_lavorativa: {
         ora_inizio: parseFloat($('#param-trf-ora-inizio')?.value) || 7.5,
@@ -368,6 +221,8 @@
       premio_trasferta_euro_per_tecnico_per_giorno: parseFloat($('#param-trf-premio')?.value) || 50,
       ore_minime_cantiere_stesso_giorno_trasferta: parseFloat($('#param-trf-ore-min')?.value) || 3,
       ora_massima_rientro_casa: parseFloat($('#param-trf-ora-max-rientro')?.value) || 18,
+      ora_inizio_giornata_viaggio: parseFloat($('#param-trf-ora-inizio-viaggio')?.value) || 7,
+      ora_fine_giornata_viaggio: parseFloat($('#param-trf-ora-fine-viaggio')?.value) || 19,
       rientro_weekend_default: true,
       premio_include_giorni_viaggio_default: true,
       mezzo_aziendale: {
@@ -398,17 +253,11 @@
     try {
       await Promise.all([
         salvaSuFile('costanti.json', modalState.costanti),
-        salvaSuFile('acessori.json', modalState.accessori),
-        salvaSuFile('trasporti.json', modalState.trasporti),
-        salvaSuFile('gru.json', modalState.gru),
         salvaSuFile('trasferta.json', modalState.trasferta),
       ]);
 
       if (window.APP_STATE) {
         window.APP_STATE.costanti = JSON.parse(JSON.stringify(modalState.costanti));
-        window.APP_STATE.accessori = JSON.parse(JSON.stringify(modalState.accessori));
-        window.APP_STATE.trasporti = JSON.parse(JSON.stringify(modalState.trasporti));
-        window.APP_STATE.gru = JSON.parse(JSON.stringify(modalState.gru));
         window.APP_STATE.trasfertaConfig = JSON.parse(JSON.stringify(modalState.trasferta));
       }
 

@@ -12,6 +12,7 @@
             <h1>PST Pergosolar</h1>
             <p class="subtitle">Configurazione preventivo</p>
             <div class="header-buttons">
+                <button type="button" id="btn-nuovo-calcolo" class="btn btn-nuovo-calcolo">Nuovo calcolo</button>
                 <a href="gestione-prodotti.html" class="btn btn-gestione">Gestione Prodotti</a>
                 <button type="button" id="btn-apri-parametri" class="btn btn-parametri">Parametri e costi</button>
             </div>
@@ -95,10 +96,10 @@
                             <p id="avviso-trasporto-merci" class="hint avviso-trasporto" hidden></p>
                         </div>
 
-                        <!-- Tecnici: select interni + presenza % affiancati -->
+                        <!-- Tecnici: interni + esterni (input diretti) -->
                         <div class="tecnici-row">
                             <div class="domanda">
-                                <label for="input-tecnici-interni">Tecnici interni</label>
+                                <label for="input-tecnici-interni">Tecnici interni (miei)</label>
                                 <select id="input-tecnici-interni" name="tecnici_interni">
                                     <option value="0">0</option>
                                     <option value="1">1</option>
@@ -114,23 +115,20 @@
                                 </select>
                             </div>
                             <div class="domanda">
-                                <label for="input-presenza-interni">Presenza interni (%)</label>
-                                <input type="number" id="input-presenza-interni" name="presenza_tecnici_interni_pct"
-                                       min="0" max="100" value="100" placeholder="0–100">
-                            </div>
-                        </div>
-
-                        <!-- Calcolati: tecnici esterni + presenza esterni -->
-                        <div class="tecnici-row tecnici-computed-row">
-                            <div class="domanda domanda-computed">
-                                <label>Tecnici esterni</label>
-                                <p id="valore-tecnici-esterni" class="valore-calcolato" aria-live="polite">0</p>
-                                <span class="hint">Calcolato da interni e %</span>
-                            </div>
-                            <div class="domanda domanda-computed">
-                                <label>Presenza esterni (%)</label>
-                                <p id="valore-presenza-esterni" class="valore-calcolato" aria-live="polite">0%</p>
-                                <span class="hint">100 − % interni</span>
+                                <label for="input-tecnici-esterni">Tecnici esterni</label>
+                                <select id="input-tecnici-esterni" name="tecnici_esterni">
+                                    <option value="0" selected>0</option>
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                    <option value="4">4</option>
+                                    <option value="5">5</option>
+                                    <option value="6">6</option>
+                                    <option value="7">7</option>
+                                    <option value="8">8</option>
+                                    <option value="9">9</option>
+                                    <option value="10">10</option>
+                                </select>
                             </div>
                         </div>
 
@@ -347,6 +345,7 @@
                                 <li>Noleggio scala: <strong id="riep-scala">—</strong></li>
                                 <li>Servizio gru in cantiere: <strong id="riep-gru-servizio">—</strong></li>
                                 <li>Servizi personalizzati: <strong id="riep-servizi-pers">—</strong></li>
+                                <li>Ricarico totale applicato: <strong id="riep-ricarico-tot">—</strong></li>
                                 <li class="lista-costi-subtot">Subtotale (senza sicurezza): <strong id="riep-subtotale">—</strong></li>
                             </ul>
                             <div class="sicurezza-blocco">
@@ -368,6 +367,11 @@
                                 <span id="valore-totale-finale-installazione" class="valore-calcolato valore-ore-grande">—</span>
                             </p>
                             <p class="hint testo-sicurezza-finale" id="testo-sicurezza-finale" hidden></p>
+                            <div class="esporta-pdf-riga">
+                                <button type="button" id="btn-esporta-pdf" class="btn btn-secondary btn-esporta-pdf">
+                                    📄 Esporta report PDF
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </section>
@@ -396,6 +400,7 @@
             <div class="modal-body">
                 <p id="modal-accessori-sottotitolo" class="modal-accessori-sottotitolo"></p>
                 <div id="modal-accessori-lista" class="modal-accessori-lista"></div>
+                <div id="modal-accessori-riepilogo" class="hint"></div>
             </div>
             <div class="modal-footer">
                 <button type="button" id="btn-conferma-accessori" class="btn btn-primary">Conferma</button>
@@ -415,9 +420,6 @@
 
             <div class="modal-tabs">
                 <button type="button" class="modal-tab active" data-tab="costanti">Costanti</button>
-                <button type="button" class="modal-tab" data-tab="accessori">Accessori</button>
-                <button type="button" class="modal-tab" data-tab="trasporti">Trasporti</button>
-                <button type="button" class="modal-tab" data-tab="gru">Gru</button>
                 <button type="button" class="modal-tab" data-tab="trasferta">Trasferta</button>
             </div>
 
@@ -491,6 +493,27 @@
                             <label for="param-trm-camion-gru">Mezzo con gru (trasporto) €/km</label>
                             <input type="number" id="param-trm-camion-gru" min="0" step="0.01" value="2">
                         </div>
+                    </div>
+
+                    <div class="parametri-group">
+                        <h3 class="parametri-group-titolo">Ricarichi e sicurezza</h3>
+                        <p class="hint">Il ricarico generale si applica a tutte le voci. I ricarichi specifici si sommano per categoria.</p>
+                        <div class="domanda">
+                            <label for="param-ricarico-generale-pct">Ricarico generale (%)</label>
+                            <input type="number" id="param-ricarico-generale-pct" min="0" max="1000" step="0.1" value="0">
+                        </div>
+                        <div class="domanda">
+                            <label for="param-ricarico-ore-pct">Ricarico ore lavoro (%)</label>
+                            <input type="number" id="param-ricarico-ore-pct" min="0" max="1000" step="0.1" value="0">
+                        </div>
+                        <div class="domanda">
+                            <label for="param-ricarico-trasporti-pct">Ricarico trasporti (%)</label>
+                            <input type="number" id="param-ricarico-trasporti-pct" min="0" max="1000" step="0.1" value="0">
+                        </div>
+                        <div class="domanda">
+                            <label for="param-ricarico-noleggi-pct">Ricarico noleggi attrezzature (%)</label>
+                            <input type="number" id="param-ricarico-noleggi-pct" min="0" max="1000" step="0.1" value="0">
+                        </div>
                         <div class="domanda">
                             <label for="param-sicurezza-pct">% calcolo automatico sicurezza su subtotale</label>
                             <input type="number" id="param-sicurezza-pct" min="0" max="100" step="0.5" value="5">
@@ -535,21 +558,6 @@
                     </div>
                 </div>
 
-                <!-- Tab Accessori -->
-                <div class="tab-content" data-tab-content="accessori">
-                    <div id="tabella-accessori-container"></div>
-                </div>
-
-                <!-- Tab Trasporti -->
-                <div class="tab-content" data-tab-content="trasporti">
-                    <div id="tabella-trasporti-container"></div>
-                </div>
-
-                <!-- Tab Gru -->
-                <div class="tab-content" data-tab-content="gru">
-                    <div id="tabella-gru-container"></div>
-                </div>
-
                 <!-- Tab Trasferta (database trasferta.json) -->
                 <div class="tab-content" data-tab-content="trasferta">
                     <div class="parametri-group">
@@ -588,6 +596,17 @@
                         <div class="domanda">
                             <label for="param-trf-ora-max-rientro">Ora massima rientro a casa (venerdì)</label>
                             <input type="number" id="param-trf-ora-max-rientro" step="0.25" min="12" max="24" value="18">
+                        </div>
+                    </div>
+                    <div class="parametri-group">
+                        <h3 class="parametri-group-titolo">Giornata viaggio (solo andata/ritorno trasferta)</h3>
+                        <div class="domanda">
+                            <label for="param-trf-ora-inizio-viaggio">Inizio giornata viaggio</label>
+                            <input type="number" id="param-trf-ora-inizio-viaggio" step="0.25" min="0" max="24" value="7">
+                        </div>
+                        <div class="domanda">
+                            <label for="param-trf-ora-fine-viaggio">Fine giornata viaggio</label>
+                            <input type="number" id="param-trf-ora-fine-viaggio" step="0.25" min="0" max="24" value="19">
                         </div>
                     </div>
                     <div class="parametri-group">
@@ -647,6 +666,54 @@
             </div>
         </div>
     </div>
+
+    <!-- Modal Esporta PDF -->
+    <div id="modal-esporta-pdf" class="modal" hidden aria-labelledby="modal-esporta-pdf-titolo">
+        <div class="modal-overlay" id="modal-esporta-pdf-overlay"></div>
+        <div class="modal-content modal-esporta-pdf-panel">
+            <div class="modal-header">
+                <h2 id="modal-esporta-pdf-titolo">📄 Esporta report PDF</h2>
+                <button type="button" id="btn-chiudi-modal-esporta-pdf" class="btn-chiudi-modal" aria-label="Chiudi">✕</button>
+            </div>
+            <div class="modal-body">
+                <p class="esporta-pdf-subtitle">Seleziona le sezioni da includere nel report:</p>
+                <div class="esporta-pdf-sezioni">
+                    <label class="esporta-pdf-check-label">
+                        <input type="checkbox" id="esporta-sez-installazione" checked>
+                        <span class="esporta-pdf-check-icona">🔧</span>
+                        <span>
+                            <strong>Costi di installazione</strong><br>
+                            <small>Manodopera, trasferta, servizi</small>
+                        </span>
+                    </label>
+                    <label class="esporta-pdf-check-label">
+                        <input type="checkbox" id="esporta-sez-trasporto" checked>
+                        <span class="esporta-pdf-check-icona">🚛</span>
+                        <span>
+                            <strong>Costi di trasporto / consegna</strong><br>
+                            <small>Trasporto struttura e accessori</small>
+                        </span>
+                    </label>
+                    <label class="esporta-pdf-check-label">
+                        <input type="checkbox" id="esporta-sez-noleggi" checked>
+                        <span class="esporta-pdf-check-icona">🏗️</span>
+                        <span>
+                            <strong>Costi noleggio attrezzature e sicurezza</strong><br>
+                            <small>Muletto, scala, gru, sicurezza cantiere</small>
+                        </span>
+                    </label>
+                </div>
+                <p id="msg-esporta-pdf-nessuna" class="msg msg-errore" hidden>Seleziona almeno una sezione.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" id="btn-genera-pdf" class="btn btn-primary">Genera PDF</button>
+                <button type="button" id="btn-annulla-esporta-pdf" class="btn btn-secondary">Annulla</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contenuto stampabile (solo @media print) -->
+    <div id="pdf-report-print" hidden></div>
 
     <script src="js/domande.js"></script>
     <script src="js/geocode.js"></script>
