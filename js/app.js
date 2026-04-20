@@ -76,14 +76,14 @@
 
   async function initData() {
     try {
-      [state.costanti, state.prodotti, state.trasporti, state.accessori, state.gru, state.trasfertaConfig] = await Promise.all([
-        loadJson('costanti.json'),
-        loadJson('prodotti.json'),
-        loadJson('trasporti.json'),
+      [state.costanti, state.prodotti, state.trasporti, state.accessori, state.trasfertaConfig] = await Promise.all([
+        loadJson('costanti.json').catch(() => null),
+        loadJson('prodotti.json').catch(() => []),
+        loadJson('trasporti.json').catch(() => []),
         loadJson('acessori.json').catch(() => []),
-        loadJson('gru.json').catch(() => []),
         loadJson('trasferta.json').catch(() => null),
       ]);
+      state.gru = [];
     } catch (e) {
       console.error(e);
       alert('Errore nel caricamento dei dati. Verifica che costanti.json, prodotti.json e trasporti.json siano presenti.');
@@ -132,10 +132,10 @@
     state.parametri.muletto_2mesi = 2300;
     state.parametri.scala_primo_giorno = 600;
     state.parametri.scala_giorno_extra = 100;
+    state.parametri.gru_primo_giorno = 600;
+    state.parametri.gru_giorno_extra = 100;
     const firstTrasporti = state.trasporti?.length && state.trasporti[0];
-    const firstGru = state.gru?.length && state.gru[0];
     state.parametri.costo_km_trasporto = firstTrasporti?.COSTO_KM != null ? firstTrasporti.COSTO_KM : null;
-    state.parametri.costo_km_gru = firstGru?.COSTO_KM != null ? firstGru.COSTO_KM : null;
 
     const pi = state.costanti?.parametri_installazione;
     const defInst = {
@@ -182,16 +182,11 @@
     });
   }
 
-  /** Aggiorna costo_km_trasporto e costo_km_gru dalla fascia corrispondente alla distanza (da JSON) */
-  function aggiornaParametriDaDistanza() {
-    const km = state.distanzaKm;
-    if (km == null) return;
-    const sortedTrasporti = state.trasporti?.length ? [...state.trasporti].sort((a, b) => (a.DISTANZA || 0) - (b.DISTANZA || 0)) : [];
-    const rowTrasporti = sortedTrasporti.find((r) => (r.DISTANZA || 0) >= km) || sortedTrasporti[sortedTrasporti.length - 1];
-    if (rowTrasporti?.COSTO_KM != null) setParametro('costo_km_trasporto', rowTrasporti.COSTO_KM);
-    const sortedGru = state.gru?.length ? [...state.gru].sort((a, b) => (a.DISTANZA || 0) - (b.DISTANZA || 0)) : [];
-    const rowGru = sortedGru.find((r) => (r.DISTANZA || 0) >= km) || sortedGru[sortedGru.length - 1];
-    if (rowGru?.COSTO_KM != null) setParametro('costo_km_gru', rowGru.COSTO_KM);
+  /** Aggiorna costo_km_trasporto dalla fascia corrispondente alla distanza (da JSON) */
+  function aggiornaParametriDistanza(km) {
+    if (km == null || !state.trasporti?.length) return;
+    const rowTr = state.trasporti.find((r) => r.DISTANZA >= km) || state.trasporti[state.trasporti.length - 1];
+    if (rowTr?.COSTO_KM != null) setParametro('costo_km_trasporto', rowTr.COSTO_KM);
   }
 
   /** Prima di usare coordinate partenza in calcoli, aggiorna state dai campi del pannello */
@@ -230,7 +225,7 @@
       const codice = acc?.nome_prodotti;
       if (!codice) return false;
       const key = `ORE_INSTALLAZIONE_${codice}`;
-      if (!Object.prototype.hasOwnProperty.call(prodotto, key)) return false;
+      if (!Object.prototype.hasOwnProperty.call(prodotto, key)) return true;
       const val = prodotto[key];
       return val != null && !Number.isNaN(Number(val));
     });
@@ -314,7 +309,14 @@
   function getQuantitaEffettivaAccessorio(slot, codice, quantitaInput) {
     const prodotto = prodottoSelezionato(slot);
     const cfg = getAccessorioConfigProdotto(prodotto, codice);
-    if (cfg.tipo_calcolo === 'per_posto_auto') return getPostiAutoCorrenti();
+    let sel = null;
+    if (state.accessoriSelezioni && state.accessoriSelezioni[slot]) {
+      sel = state.accessoriSelezioni[slot].find(a => a.codice === codice);
+    }
+    if (!sel && typeof modalAccessoriDraft !== 'undefined' && modalAccessoriDraft) {
+      sel = modalAccessoriDraft.find(a => a.codice === codice);
+    }
+    if (cfg.tipo_calcolo === 'per_posto_auto' && !sel?.custom_qty) return getPostiAutoCorrenti();
     return Math.max(0, parseNumero(quantitaInput, 0));
   }
 
@@ -463,7 +465,8 @@
       if (sel && (!Number.isFinite(Number(sel.quantita)) || Number(sel.quantita) < 0)) {
         sel.quantita = getQuantitaDefaultAccessorio(modalAccessoriSlot, codice);
       }
-      const quantita = Math.max(0, parseNumero(sel?.quantita, getQuantitaDefaultAccessorio(modalAccessoriSlot, codice)));
+      const isAuto = cfg.tipo_calcolo === 'per_posto_auto' && !sel?.custom_qty;
+      const quantita = isAuto ? getPostiAutoCorrenti() : Math.max(0, parseNumero(sel?.quantita, getQuantitaDefaultAccessorio(modalAccessoriSlot, codice)));
 
       const row = document.createElement('div');
       row.className = 'modal-accessorio-riga' + (checked ? ' modal-accessorio-riga--attivo' : '');
@@ -551,10 +554,6 @@
       qtyInput.id = `modal-acc-qta-${modalAccessoriSlot}-${codice}`;
       qtyInput.dataset.codice = codice;
       qtyInput.className = 'accessorio-input';
-      if (cfg.tipo_calcolo === 'per_posto_auto') {
-        qtyInput.disabled = true;
-        qtyInput.value = String(getPostiAutoCorrenti());
-      }
       qtyWrap.appendChild(qtyLabel);
       qtyWrap.appendChild(qtyInput);
       modCol.appendChild(qtyWrap);
@@ -626,7 +625,10 @@
         }
         if (t.matches('input[type="number"]')) {
           const item = modalAccessoriDraft.find((x) => x.codice === codice);
-          if (item) item.quantita = Math.max(0, parseNumero(t.value, 0));
+          if (item) {
+             item.quantita = Math.max(0, parseNumero(t.value, 0));
+             item.custom_qty = true;
+          }
           renderModalAccessoriRiepilogo();
         }
       });
@@ -1056,7 +1058,7 @@
     state.valori.giorni_noleggio_scala   = scaActv ? (parseInt($('#input-giorni-scala')?.value, 10) || 1) : 0;
     state.valori.costo_noleggio_scala    = scaActv ? calcoloCostoScala(state.valori.giorni_noleggio_scala) : null;
     state.valori.giorni_presenza_gru     = gruActv ? (parseInt($('#input-giorni-gru')?.value, 10) || 1) : 0;
-    state.valori.costo_gru_trasporto     = gruActv ? getCostoGruPerDistanza(state.distanzaKm) : null;
+    state.valori.costo_gru_totale        = gruActv ? getCostoGruTotale(state.valori.giorni_presenza_gru) : 0;
 
     state.valori.servizi_personalizzati = [];
     state.serviziPersonalizzati.forEach(servizio => {
@@ -1190,7 +1192,7 @@
       for (const a of lista) {
         if (a.modalita !== 'installato') continue;
         const cfg = getAccessorioConfigProdotto(p, a.codice);
-        const qEff = cfg.tipo_calcolo === 'per_posto_auto' ? posti : Math.max(0, parseNumero(a.quantita, 0));
+        const qEff = (cfg.tipo_calcolo === 'per_posto_auto' && !a.custom_qty) ? posti : Math.max(0, parseNumero(a.quantita, 0));
         if (qEff <= 0) continue;
         const oBase = Math.max(0, parseNumero(cfg.ore_installazione_unita, getOreAccessorioProdotto(p, a.codice))) * qEff;
         oreAccBase += oBase;
@@ -1452,12 +1454,14 @@
 
   function fmtOre(h) {
     if (h == null || Number.isNaN(h)) return '—';
-    return `${Math.round(h * 100) / 100} h`;
+    // Remove JS floating point inaccuracy but strip trailing zeroes if it's a whole number
+    return `${parseFloat(Number(h).toFixed(2))} h`;
   }
 
   function fmtEuro(n) {
     if (n == null || Number.isNaN(n)) return '—';
-    return `€ ${Math.round(n * 100) / 100}`;
+    // Always show 2 decimals for Euro
+    return `€ ${Number(n).toFixed(2)}`;
   }
 
   function aggiornaOreInstallazioneUI() {
@@ -1556,7 +1560,7 @@
     const costoViaggioStima = trasfertaAttiva ? stimaCostoViaggioTrasferta(d, N_int, tipoTr) : 0;
     const hotelNotte = cfgTr.hotel_euro_per_notte != null ? Number(cfgTr.hotel_euro_per_notte) : 75;
     const nottiHotel = trasfertaAttiva && giorniInt > 0 ? Math.max(0, giorniInt - 1) : 0;
-    const hotelTot = trasfertaAttiva ? nottiHotel * hotelNotte : 0;
+    const hotelTot = trasfertaAttiva ? nottiHotel * hotelNotte * N_int : 0;
     const totaleVociTrasferta = trasfertaAttiva ? premioTot + costoViaggioStima + hotelTot + extraUtente : 0;
     const costoInterniComplessivo = costoManodoperaInt + totaleVociTrasferta;
 
@@ -1610,7 +1614,7 @@
       const elVg = $('#valore-costo-viaggio-modalita');
       if (elVg) elVg.textContent = `${fmtEuro(costoViaggioStima)} (${tipoTr.replace(/_/g, ' ')})`;
       const elHt = $('#valore-costo-hotel-trasferta');
-      if (elHt) elHt.textContent = `${fmtEuro(hotelTot)} (${nottiHotel} notti × ${hotelNotte} €)`;
+      if (elHt) elHt.textContent = `${fmtEuro(hotelTot)} (${N_int} tecnici × ${nottiHotel} notti × ${hotelNotte} €)`;
       const elEx = $('#valore-costo-extra-trasferta-linea');
       if (elEx) elEx.textContent = fmtEuro(extraUtente);
       const elVt = $('#valore-totale-voci-trasferta');
@@ -1761,11 +1765,12 @@
     return primo + (g - 1) * extra;
   }
 
-  /** Costo servizio gru: usa state.parametri.costo_km_gru (valorizzato da gru.json per distanza, modificabile) */
-  function getCostoGruPerDistanza(distanzaKm) {
-    const costoKm = getParametro('costo_km_gru');
-    if (costoKm == null || distanzaKm == null) return null;
-    return Math.round((costoKm * distanzaKm) * 100) / 100;
+  /** Costo servizio gru: usa state.parametri (primo giorno + extra) */
+  function getCostoGruTotale(giorni) {
+    if (giorni <= 0) return 0;
+    const primo = getParametro('gru_primo_giorno') ?? 600;
+    const extra = getParametro('gru_giorno_extra') ?? 100;
+    return primo + (giorni - 1) * extra;
   }
 
   /** Tariffa €/km nostro mezzo = somma componenti variabili (costanti.json). */
@@ -1840,7 +1845,7 @@
       const cfg = getAccessorioConfigProdotto(prodotto, a.codice);
       if (!cfg.soggetto_gestione_carico) return;
 
-      const qty = cfg.tipo_calcolo === 'per_posto_auto' ? (Number(posti) || 0) : Math.max(0, parseNumero(a.quantita, 0));
+      const qty = (cfg.tipo_calcolo === 'per_posto_auto' && !a.custom_qty) ? (Number(posti) || 0) : Math.max(0, parseNumero(a.quantita, 0));
       if (qty <= 0) return;
 
       let capAcc = 0;
@@ -1940,8 +1945,7 @@
     const costoMul = mulActv ? calcoloCostoMuletto($('#input-giorni-muletto')?.value) : null;
     const costoSca = scaActv ? calcoloCostoScala($('#input-giorni-scala')?.value) : null;
     const giorniGru = parseInt($('#input-giorni-gru')?.value, 10) || 1;
-    const costoGruUn = gruActv ? getCostoGruPerDistanza(state.distanzaKm) : null;
-    const costoGruTot = costoGruUn != null && gruActv ? Math.round(costoGruUn * giorniGru * 100) / 100 : 0;
+    const costoGruTot = gruActv ? getCostoGruTotale(giorniGru) : 0;
 
     const cMul = costoMul != null ? costoMul : 0;
     const cSca = costoSca != null ? costoSca : 0;
@@ -1997,7 +2001,7 @@
     const elRs = $('#riep-scala');
     if (elRs) elRs.textContent = scaActv && costoSca != null ? fmtEuro(costoSca) : '—';
     const elRg = $('#riep-gru-servizio');
-    if (elRg) elRg.textContent = gruActv && costoGruUn != null ? fmtEuro(costoGruTot) : '—';
+    if (elRg) elRg.textContent = gruActv ? fmtEuro(costoGruTot) : '-';
     const elRp = $('#riep-servizi-pers');
     if (elRp) elRp.textContent = servPers > 0 ? fmtEuro(servPers) : '€ 0';
     const elRr = $('#riep-ricarico-tot');
@@ -2006,6 +2010,18 @@
     if (elSub) elSub.textContent = fmtEuro(subtotale);
     const elTot = $('#valore-totale-finale-installazione');
     if (elTot) elTot.textContent = fmtEuro(totaleFin);
+
+    const elPostoBox = $('#blocco-totale-per-posto');
+    const elPostoVal = $('#valore-totale-per-posto');
+    const postiCorrenti = getPostiAutoCorrenti();
+    if (elPostoBox && elPostoVal) {
+      if (postiCorrenti > 0 && totaleFin > 0) {
+        elPostoBox.hidden = false;
+        elPostoVal.textContent = fmtEuro(totaleFin / postiCorrenti);
+      } else {
+        elPostoBox.hidden = true;
+      }
+    }
 
     const testoTrasporto = det.avviso
       ? det.avviso
@@ -2082,16 +2098,11 @@
     const elGru = $('#valore-gru-trasporto');
     if (elGru) {
       if (gruActv) {
-        const costoGru = getCostoGruPerDistanza(state.distanzaKm);
         const giorniGru = parseInt($('#input-giorni-gru')?.value, 10) || 1;
-        if (costoGru != null) {
-          const costoTotale = costoGru * giorniGru;
-          elGru.textContent = `€ ${Math.round(costoTotale * 100) / 100}`;
-        } else {
-          elGru.textContent = '—';
-        }
+        const costoTotale = getCostoGruTotale(giorniGru);
+        elGru.textContent = fmtEuro(costoTotale);
       } else {
-        elGru.textContent = '—';
+        elGru.textContent = '-';
       }
     }
 
@@ -2144,7 +2155,7 @@
       const valDist = $('#valore-distanza');
       if (valDist) valDist.textContent = `${km} km`;
       abilitaProdotti();
-      aggiornaParametriDaDistanza();
+      aggiornaParametriDistanza(state.distanzaKm);
       mostraNascondiDomande();
       checkSubmitFn();
     }
@@ -2494,6 +2505,49 @@
         chiudi();
       });
     }
+
+    // ── Copia per CRM ──
+    function testoSezionePerCrm(sez) {
+      const indirizzo = (state.valori?.indirizzo_cantiere || '').trim() || '—';
+      const comune    = estraiComuneDaIndirizzo(indirizzo) || indirizzo;
+
+      if (sez === 'installazione') {
+        return `Costi installazione pergole fotovoltaiche presso cantiere di ${comune} – ${indirizzo}\n\n` +
+          `La voce comprende l'analisi e la quantificazione delle attività di montaggio delle strutture Pergosolar, sviluppata sulla base del numero di posti auto, della configurazione dei moduli e degli eventuali accessori previsti (con distinzione tra sola fornitura e fornitura con installazione).\n\n` +
+          `Il calcolo è effettuato considerando esclusivamente le ore operative effettive in cantiere, determinate per singolo posto auto e integrate con le lavorazioni aggiuntive legate agli accessori installati. Le ore sono sempre considerate al netto dei tempi di trasferimento e delle pause, garantendo una stima realistica delle attività produttive. La valorizzazione include l'impiego di squadre interne e/o esterne, il costo orario del personale tecnico specializzato, eventuali indennità di trasferta ove applicabili e l'organizzazione delle fasi di montaggio.\n\n` +
+          `Per cantieri oltre la distanza soglia, sono considerati anche i costi indiretti legati alla trasferta, quali logistica, pernottamenti e gestione del personale.`;
+      }
+      if (sez === 'trasporto') {
+        return `Costi di trasporto materiali Pergosolar presso cantiere di ${comune} – ${indirizzo}\n\n` +
+          `La voce comprende il trasporto delle strutture Pergosolar dal sito produttivo al cantiere, calcolato in funzione del numero di posti auto, del peso complessivo dei materiali e della tipologia di mezzo utilizzato. La modalità di trasporto viene determinata tra mezzo aziendale, mezzo con gru o bilico per grandi forniture, in funzione dell'ottimizzazione logistica della commessa.\n\n` +
+          `Il calcolo include la tariffa chilometrica differenziata per tipologia di mezzo, i costi di carburante, pedaggi e usura, nonché l'ottimizzazione dei carichi in relazione alla capacità di trasporto.\n\n` +
+          `La stima è sviluppata per garantire efficienza, sicurezza e corretta proporzione tra volumi trasportati e costi sostenuti.`;
+      }
+      if (sez === 'noleggi') {
+        return `Costi noleggio attrezzature e sicurezza cantiere Pergosolar – ${comune}\n\n` +
+          `La voce comprende il noleggio delle attrezzature necessarie per l'esecuzione in sicurezza delle operazioni di installazione, selezionate in funzione della configurazione della commessa e delle caratteristiche del cantiere. Sono inclusi servizi di sollevamento con gru, piattaforme elevabili, scale professionali e attrezzature specifiche per il montaggio in quota, oltre ai mezzi di supporto alle operazioni logistiche.\n\n` +
+          `Il calcolo è effettuato sulla base dei giorni effettivi di utilizzo e delle reali esigenze operative, con possibilità di adattamento a condizioni particolari di cantiere. È inoltre inclusa una quota dedicata alla gestione della sicurezza relativa al personale direttamente impiegato nelle lavorazioni, sia interno sia esterno, purché operante sotto il coordinamento diretto e regolato da contratto di subappalto con Spazi Tecnologie d'Ombra Srl, comprensiva di dispositivi di protezione, formazione e coordinamento operativo.`;
+      }
+      return '';
+    }
+
+    $$('.btn-crm-copia').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const sez = btn.dataset.sez;
+        const testo = testoSezionePerCrm(sez);
+        if (!testo) return;
+        navigator.clipboard.writeText(testo).then(() => {
+          const feedback = $('#msg-copia-crm-ok');
+          if (feedback) {
+            feedback.hidden = false;
+            clearTimeout(feedback._t);
+            feedback._t = setTimeout(() => { feedback.hidden = true; }, 2500);
+          }
+        }).catch(() => {
+          alert('Impossibile copiare negli appunti. Prova a usare Ctrl+C dopo aver selezionato il testo.');
+        });
+      });
+    });
   }
 
   function estraiComuneDaIndirizzo(indirizzo) {

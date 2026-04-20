@@ -321,7 +321,7 @@
                                         <p id="valore-gru-trasporto" class="valore-costo" aria-live="polite">—</p>
                                     </div>
                                 </div>
-                                <span class="hint">Costi da gru.json (noleggio/servizio in cantiere; distinto dal «Mezzo con gru» per trasporto struttura)</span>
+                                <span class="hint">Valori configurabili in Parametri e costi (distinto dal «Mezzo con gru» per trasporto)</span>
                             </div>
                         </div>
 
@@ -338,13 +338,45 @@
                         <!-- Totale installazione e sicurezza -->
                         <div class="blocco-totale-installazione" id="blocco-totale-installazione" hidden>
                             <h3 class="sezione-sottotitolo">Riepilogo costi installazione</h3>
-                            <ul class="lista-costi-installazione">
-                                <li>Manodopera stimata: <strong id="riep-manodopera">—</strong></li>
-                                <li>Trasporto struttura: <strong id="riep-trasporto-merci">—</strong></li>
-                                <li>Noleggio muletto: <strong id="riep-muletto">—</strong></li>
-                                <li>Noleggio scala: <strong id="riep-scala">—</strong></li>
-                                <li>Servizio gru in cantiere: <strong id="riep-gru-servizio">—</strong></li>
-                                <li>Servizi personalizzati: <strong id="riep-servizi-pers">—</strong></li>
+
+                            <div class="riep-cards-grid">
+
+                            <div class="riep-card riep-card--manodopera">
+                                <div class="riep-card-header">
+                                    <span class="riep-card-icona">👷</span>
+                                    <span class="riep-card-titolo">Manodopera</span>
+                                </div>
+                                <ul class="riep-card-lista">
+                                    <li>Manodopera stimata: <strong id="riep-manodopera">—</strong></li>
+                                    <li>Servizi personalizzati: <strong id="riep-servizi-pers">—</strong></li>
+                                </ul>
+                            </div>
+
+                            <div class="riep-card riep-card--trasporto">
+                                <div class="riep-card-header">
+                                    <span class="riep-card-icona">🚛</span>
+                                    <span class="riep-card-titolo">Trasporto struttura</span>
+                                </div>
+                                <ul class="riep-card-lista">
+                                    <li>Costo trasporto: <strong id="riep-trasporto-merci">—</strong></li>
+                                </ul>
+                            </div>
+
+                            <div class="riep-card riep-card--noleggi">
+                                <div class="riep-card-header">
+                                    <span class="riep-card-icona">🏗️</span>
+                                    <span class="riep-card-titolo">Noleggi &amp; Attrezzature</span>
+                                </div>
+                                <ul class="riep-card-lista">
+                                    <li>Noleggio muletto: <strong id="riep-muletto">—</strong></li>
+                                    <li>Noleggio scala: <strong id="riep-scala">—</strong></li>
+                                    <li>Servizio gru in cantiere: <strong id="riep-gru-servizio">—</strong></li>
+                                </ul>
+                            </div>
+
+                            </div><!-- /riep-cards-grid -->
+
+                            <ul class="lista-costi-installazione" style="margin-top:0.75rem;">
                                 <li>Ricarico totale applicato: <strong id="riep-ricarico-tot">—</strong></li>
                                 <li class="lista-costi-subtot">Subtotale (senza sicurezza): <strong id="riep-subtotale">—</strong></li>
                             </ul>
@@ -365,6 +397,10 @@
                             <p class="totale-finale-installazione">
                                 <strong>Totale installazione:</strong>
                                 <span id="valore-totale-finale-installazione" class="valore-calcolato valore-ore-grande">—</span>
+                            </p>
+                            <p class="totale-finale-installazione" id="blocco-totale-per-posto" hidden style="margin-top:0.5rem; color:#555;">
+                                <strong>Di cui per singolo posto auto:</strong>
+                                <span id="valore-totale-per-posto" class="valore-calcolato valore-ore-grande">—</span>
                             </p>
                             <p class="hint testo-sicurezza-finale" id="testo-sicurezza-finale" hidden></p>
                             <div class="esporta-pdf-riga">
@@ -463,6 +499,18 @@
                         <div class="domanda">
                             <label for="param-scala-giorno">€ per giorno aggiuntivo</label>
                             <input type="number" id="param-scala-giorno" min="0" step="1">
+                        </div>
+                    </div>
+
+                    <div class="parametri-group">
+                        <h3 class="parametri-group-titolo">Servizio Gru in cantiere</h3>
+                        <div class="domanda">
+                            <label for="param-gru-primo">€ primo giorno</label>
+                            <input type="number" id="param-gru-primo" min="0" step="1">
+                        </div>
+                        <div class="domanda">
+                            <label for="param-gru-giorno">€ per giorno aggiuntivo</label>
+                            <input type="number" id="param-gru-giorno" min="0" step="1">
                         </div>
                     </div>
 
@@ -704,6 +752,23 @@
                     </label>
                 </div>
                 <p id="msg-esporta-pdf-nessuna" class="msg msg-errore" hidden>Seleziona almeno una sezione.</p>
+
+                <!-- Copia per CRM -->
+                <div class="crm-copia-section">
+                    <p class="crm-copia-titolo">📋 Copia testo per CRM (senza prezzi)</p>
+                    <div class="crm-copia-bottoni">
+                        <button type="button" id="btn-copia-crm-installazione" class="btn btn-crm-copia" data-sez="installazione">
+                            🔧 Installazione
+                        </button>
+                        <button type="button" id="btn-copia-crm-trasporto" class="btn btn-crm-copia" data-sez="trasporto">
+                            🚛 Trasporto
+                        </button>
+                        <button type="button" id="btn-copia-crm-noleggi" class="btn btn-crm-copia" data-sez="noleggi">
+                            🏗️ Noleggi
+                        </button>
+                    </div>
+                    <p id="msg-copia-crm-ok" class="crm-copia-feedback" hidden>✅ Testo copiato negli appunti!</p>
+                </div>
             </div>
             <div class="modal-footer">
                 <button type="button" id="btn-genera-pdf" class="btn btn-primary">Genera PDF</button>

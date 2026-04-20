@@ -132,16 +132,29 @@
       const keyCapCam = `ACCESSORIO_CAP_CAMION_GRU_${codice}`;
 
       const codiceUpper = String(codice).toUpperCase();
-      const defaultCarico = ['ZAVORRE', 'PF', 'PANNELLI_COIBENTATI'].includes(codiceUpper);
+      const defaultCarico = ['ZAVORRE', 'PF', 'PANNELLI_COIBENTATI'].includes(codiceUpper) || (acc.soggetto_gestione_carico === true);
 
-      if (out[keyOre] == null || Number.isNaN(Number(out[keyOre]))) out[keyOre] = 0;
-      if (out[keyPeso] == null || Number.isNaN(Number(out[keyPeso]))) out[keyPeso] = 0;
+      if (codiceUpper.startsWith('ZAVORRA_')) {
+        if (out[keyOre] == null && out['ORE_INSTALLAZIONE_ZAVORRE'] != null) {
+          out[keyOre] = out['ORE_INSTALLAZIONE_ZAVORRE'];
+        }
+      }
+
+      const defaultOre = typeof acc.ore_installazione_unita === 'number' ? acc.ore_installazione_unita : (typeof acc.ore_installazione === 'number' ? acc.ore_installazione : 0);
+      if (out[keyOre] == null || Number.isNaN(Number(out[keyOre])) || out[keyOre] === 0) out[keyOre] = defaultOre;
+      if (out[keyPeso] == null || Number.isNaN(Number(out[keyPeso])) || out[keyPeso] === 0) out[keyPeso] = acc.peso || 0;
       out[keyPers] = out[keyPers] === true;
       out[keyCarico] = out[keyCarico] === true || out[keyPers] === true || defaultCarico;
-      out[keyTipo] = String(out[keyTipo] || 'per_posto_auto').toLowerCase() === 'per_pz' ? 'per_pz' : 'per_posto_auto';
-      out[keyCapBil] = Math.max(0, parseInt(out[keyCapBil], 10) || 0);
-      out[keyCapNostro] = Math.max(0, parseInt(out[keyCapNostro], 10) || 0);
-      out[keyCapCam] = Math.max(0, parseInt(out[keyCapCam], 10) || 0);
+      out[keyTipo] = String(out[keyTipo] || acc.tipo_calcolo || 'per_posto_auto').toLowerCase() === 'per_pz' ? 'per_pz' : 'per_posto_auto';
+      
+      const parsedBil = parseInt(out[keyCapBil], 10);
+      out[keyCapBil] = !Number.isNaN(parsedBil) && parsedBil > 0 ? Math.max(0, parsedBil) : Math.max(0, parseInt(acc.cap_bilico, 10) || 0);
+      
+      const parsedNostro = parseInt(out[keyCapNostro], 10);
+      out[keyCapNostro] = !Number.isNaN(parsedNostro) && parsedNostro > 0 ? Math.max(0, parsedNostro) : Math.max(0, parseInt(acc.cap_nostro_mezzo, 10) || 0);
+      
+      const parsedCamion = parseInt(out[keyCapCam], 10);
+      out[keyCapCam] = !Number.isNaN(parsedCamion) && parsedCamion > 0 ? Math.max(0, parsedCamion) : Math.max(0, parseInt(acc.cap_camion_gru, 10) || 0);
     });
 
     return out;
@@ -177,14 +190,15 @@
     accessori.forEach((acc) => {
       const codice = acc?.nome_prodotti;
       if (!codice) return;
-      p[`ORE_INSTALLAZIONE_${codice}`] = 0;
-      p[`PESO_ACCESSORIO_${codice}`] = 0;
+      const defaultOre = typeof acc.ore_installazione_unita === 'number' ? acc.ore_installazione_unita : (typeof acc.ore_installazione === 'number' ? acc.ore_installazione : 0);
+      p[`ORE_INSTALLAZIONE_${codice}`] = defaultOre;
+      p[`PESO_ACCESSORIO_${codice}`] = acc.peso || 0;
       p[`CONSEGNA_PERSONALIZZATA_${codice}`] = false;
-      p[`ACCESSORIO_GESTIONE_CARICO_${codice}`] = false;
-      p[`ACCESSORIO_TIPO_CALCOLO_${codice}`] = 'per_posto_auto';
-      p[`ACCESSORIO_CAP_BILICO_${codice}`] = 0;
-      p[`ACCESSORIO_CAP_NOSTRO_MEZZO_${codice}`] = 0;
-      p[`ACCESSORIO_CAP_CAMION_GRU_${codice}`] = 0;
+      p[`ACCESSORIO_GESTIONE_CARICO_${codice}`] = acc.soggetto_gestione_carico === true || ['ZAVORRE', 'PF', 'PANNELLI_COIBENTATI'].includes(String(codice).toUpperCase());
+      p[`ACCESSORIO_TIPO_CALCOLO_${codice}`] = acc.tipo_calcolo || 'per_posto_auto';
+      p[`ACCESSORIO_CAP_BILICO_${codice}`] = acc.cap_bilico || 0;
+      p[`ACCESSORIO_CAP_NOSTRO_MEZZO_${codice}`] = acc.cap_nostro_mezzo || 0;
+      p[`ACCESSORIO_CAP_CAMION_GRU_${codice}`] = acc.cap_camion_gru || 0;
     });
     return normalizzaProdotto(p);
   }

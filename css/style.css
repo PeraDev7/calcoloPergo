@@ -761,6 +761,112 @@ body {
   white-space: nowrap;
 }
 
+/* ────────────────────────────────────────────────
+   Riepilogo card sezioni – design premium
+─────────────────────────────────────────────────── */
+.riep-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.85rem;
+  margin-bottom: 1.1rem;
+}
+
+.riep-card {
+  position: relative;
+  border-radius: 14px;
+  border: 1px solid rgba(0,0,0,.08);
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 2px 10px rgba(0,0,0,.07), 0 1px 3px rgba(0,0,0,.05);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.riep-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 22px rgba(0,0,0,.11), 0 2px 6px rgba(0,0,0,.07);
+}
+
+/* Barra colorata verticale a sinistra */
+.riep-card::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 4px;
+  border-radius: 14px 0 0 14px;
+}
+
+.riep-card--manodopera::before { background: linear-gradient(180deg, #3b82f6 0%, #1d4ed8 100%); }
+.riep-card--trasporto::before  { background: linear-gradient(180deg, #22c55e 0%, #15803d 100%); }
+.riep-card--noleggi::before    { background: linear-gradient(180deg, #f59e0b 0%, #b45309 100%); }
+
+.riep-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.8rem 1rem 0.55rem 1.2rem;
+}
+
+.riep-card-icona {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+.riep-card--manodopera .riep-card-icona { background: #eff6ff; }
+.riep-card--trasporto  .riep-card-icona { background: #f0fdf4; }
+.riep-card--noleggi    .riep-card-icona { background: #fffbeb; }
+
+.riep-card-titolo {
+  text-transform: uppercase;
+  font-size: 0.7rem;
+  letter-spacing: 0.09em;
+  font-weight: 800;
+}
+
+.riep-card--manodopera .riep-card-titolo { color: #1d4ed8; }
+.riep-card--trasporto  .riep-card-titolo { color: #15803d; }
+.riep-card--noleggi    .riep-card-titolo { color: #b45309; }
+
+/* Separatore sottile */
+.riep-card-header + .riep-card-lista {
+  border-top: 1px solid rgba(0,0,0,.06);
+}
+
+.riep-card-lista {
+  margin: 0;
+  padding: 0.65rem 1rem 0.8rem 1.2rem;
+  line-height: 1.0;
+  font-size: 0.88rem;
+  background: transparent;
+  list-style: none;
+}
+
+.riep-card-lista li {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.5rem;
+  padding: 0.28rem 0;
+  color: #555;
+  border-bottom: 1px dashed rgba(0,0,0,.06);
+}
+
+.riep-card-lista li:last-child {
+  border-bottom: none;
+}
+
+.riep-card-lista li strong {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  color: #111;
+  white-space: nowrap;
+}
+
 /* ── Esporta PDF ── */
 .esporta-pdf-riga {
   margin-top: 1.25rem;
@@ -827,6 +933,61 @@ body {
 .esporta-pdf-check-icona {
   font-size: 1.3rem;
   flex-shrink: 0;
+}
+
+/* ── Copia per CRM ── */
+.crm-copia-section {
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px dashed var(--border, #d8ddd3);
+}
+
+.crm-copia-titolo {
+  margin: 0 0 0.65rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #555;
+}
+
+.crm-copia-bottoni {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.btn-crm-copia {
+  flex: 1;
+  min-width: 120px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 0.55rem 0.75rem;
+  border: 1.5px solid var(--primary, #2d5016);
+  border-radius: 8px;
+  background: #f5f9f1;
+  color: var(--primary, #2d5016);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, transform 0.1s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+}
+
+.btn-crm-copia:hover {
+  background: var(--primary, #2d5016);
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.btn-crm-copia:active {
+  transform: translateY(0);
+}
+
+.crm-copia-feedback {
+  margin: 0.6rem 0 0;
+  font-size: 0.85rem;
+  color: #2a7c42;
+  font-weight: 600;
 }
 
 /* ── Stampa / PDF ── */
@@ -1801,3 +1962,6 @@ body {
     padding: 0.75rem;
   }
 }
+
+.esporta-pdf-rigacheck { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; gap: 1rem; }
+.btn-copia-crm { padding: 0.4rem 0.8rem; font-size: 0.85rem; white-space: nowrap; }

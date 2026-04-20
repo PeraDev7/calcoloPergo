@@ -1,0 +1,42 @@
+CHANGELOG - Applicazione Calcolo Preventivi Pergosolar
+Spazi Tecnologie d'Ombra Srl
+
+
+Aprile 2026
+
+
+Gestione tecnici
+
+Il vecchio sistema con "totale squadra + percentuale interni" creava confusione e non era intuitivo. E' stato sostituito con due campi separati: uno per i tecnici interni (miei) e uno per i tecnici esterni. I valori vanno da 0 a 10 per entrambi. Il calcolo di manodopera, trasferta e ore funziona direttamente su questi numeri senza passare per percentuali intermedie.
+
+
+Esportazione report PDF
+
+E' stato aggiunto un pulsante in fondo al blocco del totale installazione per esportare il report in PDF. Prima di generarlo si apre una finestra dove si sceglie quali sezioni includere tra costi di installazione, costi di trasporto e costi noleggio/sicurezza. Si possono scegliere una, due o tutte e tre. Il documento riporta i testi descrittivi ufficiali, i valori calcolati e l'indirizzo del cantiere, poi apre la stampa del browser.
+
+
+Tasto Nuovo calcolo
+
+Aggiunto in alto nell'intestazione. Serve per azzerare il preventivo in corso e ripartire da zero. Chiede conferma prima di procedere. Cancella i dati dal localStorage e ricarica la pagina vuota. C'era un problema tecnico per cui i dati venivano riscritti durante il ricaricamento nonostante la cancellazione; e' stato risolto usando un flag in sessionStorage che blocca il ripristino automatico della bozza.
+
+
+Deploy su Vercel
+
+L'applicazione e' stata adattata per girare su Vercel Free. Il problema era che Vercel non permette di scrivere file sul server, quindi il salvataggio tramite API non funzionava. La soluzione adottata e' stata eliminare il routing verso il server Node.js e servire tutto come sito statico. I dati modificati (parametri, prodotti, trasferta) vengono ora salvati nel localStorage del browser invece che su file. All'avvio l'app controlla prima il localStorage e se non trova nulla carica i JSON di default inclusi nel repository. In pratica ogni utente ha la sua copia locale delle impostazioni salvate nel proprio browser.
+
+
+Versioni precedenti - riepilogo
+
+
+I posti auto seguono una sequenza a scaglioni: da 1 a 20 con passo 1, poi da 30 a 100 con passo 10. Il massimo in Gestione Prodotti e' stato portato a 100.
+
+Nella finestra Parametri e costi, tab Trasferta, sono stati aggiunti due campi per l'ora di inizio e fine della giornata di viaggio (default 7:00 e 19:00). Servono per distinguere le ore cantiere disponibili nei giorni di andata (lunedi') e ritorno (venerdi') rispetto a una giornata normale.
+
+Sempre in Parametri e costi, tab Costanti, e' stata aggiunta una sezione ricarichi con quattro percentuali configurabili: ricarico generale, ricarico ore lavoro, ricarico trasporti e ricarico noleggi. Il totale viene mostrato nel riepilogo finale. C'e' anche la percentuale sicurezza.
+
+Il form salva automaticamente la bozza nel localStorage mentre si compila. Se si va in Gestione Prodotti e si torna indietro il form e' esattamente come lo si era lasciato. Il salvataggio avviene anche alla chiusura della finestra.
+
+Gli accessori per ogni prodotto sono stati estesi con le informazioni logistiche: peso, se sono soggetti a gestione carico, come si calcola la quantita' (per posto auto o per pezzo), capacita' per tipo di mezzo e ore di installazione per unita'. Nel modal di selezione accessori compare un riepilogo in tempo reale con quantita', ore e stima trasporto per ogni accessorio selezionato. I risultati sono evidenziati con un'etichetta colorata (OK, WARNING o INFO) a seconda che i dati siano completi, manchino informazioni o l'accessorio sia solo in fornitura senza installazione.
+
+Il calcolo del trasporto tiene conto anche dei viaggi aggiuntivi per gli accessori separati dalla struttura, con il relativo costo dettagliato nel riepilogo.
+

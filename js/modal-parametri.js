@@ -55,12 +55,16 @@
     const muletto2Mesi = $('#param-muletto-2mesi');
     const scalaPrimo = $('#param-scala-primo');
     const scalaGiorno = $('#param-scala-giorno');
+    const gruPrimo = $('#param-gru-primo');
+    const gruGiorno = $('#param-gru-giorno');
 
     if (mulettoSett) mulettoSett.value = window.APP_STATE?.parametri?.muletto_settimana ?? 800;
     if (mulettoMese) mulettoMese.value = window.APP_STATE?.parametri?.muletto_mese ?? 1200;
     if (muletto2Mesi) muletto2Mesi.value = window.APP_STATE?.parametri?.muletto_2mesi ?? 2300;
     if (scalaPrimo) scalaPrimo.value = window.APP_STATE?.parametri?.scala_primo_giorno ?? 600;
     if (scalaGiorno) scalaGiorno.value = window.APP_STATE?.parametri?.scala_giorno_extra ?? 100;
+    if (gruPrimo) gruPrimo.value = window.APP_STATE?.parametri?.gru_primo_giorno ?? 600;
+    if (gruGiorno) gruGiorno.value = window.APP_STATE?.parametri?.gru_giorno_extra ?? 100;
 
     const pi = modalState.costanti?.parametri_installazione || {};
     const ap = window.APP_STATE?.parametri || {};
@@ -169,6 +173,8 @@
     const muletto2Mesi = $('#param-muletto-2mesi');
     const scalaPrimo = $('#param-scala-primo');
     const scalaGiorno = $('#param-scala-giorno');
+    const gruPrimo = $('#param-gru-primo');
+    const gruGiorno = $('#param-gru-giorno');
 
     if (window.APP_STATE?.parametri) {
       if (mulettoSett) window.APP_STATE.parametri.muletto_settimana = parseFloat(mulettoSett.value) || 800;
@@ -176,6 +182,8 @@
       if (muletto2Mesi) window.APP_STATE.parametri.muletto_2mesi = parseFloat(muletto2Mesi.value) || 2300;
       if (scalaPrimo) window.APP_STATE.parametri.scala_primo_giorno = parseFloat(scalaPrimo.value) || 600;
       if (scalaGiorno) window.APP_STATE.parametri.scala_giorno_extra = parseFloat(scalaGiorno.value) || 100;
+      if (gruPrimo) window.APP_STATE.parametri.gru_primo_giorno = parseFloat(gruPrimo.value) || 600;
+      if (gruGiorno) window.APP_STATE.parametri.gru_giorno_extra = parseFloat(gruGiorno.value) || 100;
     }
 
     modalState.costanti.parametri_trasporto_merci = {

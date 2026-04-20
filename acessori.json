@@ -1,9 +1,23 @@
 [
   {
+    "nome": "Pergola Smart 5x3",
+    "nome_prodotti": "PERGOLA_SMART_5X3",
+    "icona": "⛺",
+    "descrizione": "Pergola indipendente utilizzabile come modulo aggiuntivo.",
+    "peso": 300,
+    "ore_installazione": 8,
+    "cap_bilico": 24,
+    "cap_camion_gru": 19,
+    "cap_nostro_mezzo": 5,
+    "soggetto_gestione_carico": true,
+    "tipo_calcolo": "per_pz"
+  },
+  {
     "nome": "Pannelli fotovoltaici",
     "nome_prodotti": "PF",
     "icona": "☀️",
-    "descrizione": "Modulo fotovoltaico integrabile sulla struttura."
+    "descrizione": "Modulo fotovoltaico integrabile sulla struttura.",
+    "tipo_calcolo": "per_pz"
   },
   {
     "nome": "Guarnizioni",
@@ -12,10 +26,59 @@
     "descrizione": "Guarnizioni per tenuta e protezione dagli agenti atmosferici."
   },
   {
-    "nome": "Zavorre",
-    "nome_prodotti": "ZAVORRE",
+    "nome": "Zavorra Standard 1600",
+    "nome_prodotti": "ZAVORRA_STD_1600",
     "icona": "⚖️",
-    "descrizione": "Zavorre per stabilizzazione e carico strutturale."
+    "descrizione": "Zavorra standard da 1600kg.",
+    "peso": 1600,
+    "cap_bilico": 15,
+    "cap_camion_gru": 10,
+    "cap_nostro_mezzo": 0,
+    "soggetto_gestione_carico": true
+  },
+  {
+    "nome": "Zavorra Standard Twen Drive 2800",
+    "nome_prodotti": "ZAVORRA_STD_TWEN_DRIVE_2800",
+    "icona": "⚖️",
+    "descrizione": "Zavorra standard Twen Drive da 2800kg.",
+    "peso": 2800,
+    "cap_bilico": 10,
+    "cap_camion_gru": 5,
+    "cap_nostro_mezzo": 0,
+    "soggetto_gestione_carico": true
+  },
+  {
+    "nome": "Zavorra Standard 1000",
+    "nome_prodotti": "ZAVORRA_STD_1000",
+    "icona": "⚖️",
+    "descrizione": "Zavorra standard da 1000kg.",
+    "peso": 1000,
+    "cap_bilico": 24,
+    "cap_camion_gru": 19,
+    "cap_nostro_mezzo": 1,
+    "soggetto_gestione_carico": true
+  },
+  {
+    "nome": "Zavorra Acciaio Standard",
+    "nome_prodotti": "ZAVORRA_ACCIAIO_STD",
+    "icona": "⚖️",
+    "descrizione": "Zavorra in acciaio standard.",
+    "peso": 250,
+    "cap_bilico": 96,
+    "cap_camion_gru": 91,
+    "cap_nostro_mezzo": 5,
+    "soggetto_gestione_carico": true
+  },
+  {
+    "nome": "Zavorra Acciaio Expo",
+    "nome_prodotti": "ZAVORRA_ACCIAIO_EXPO",
+    "icona": "⚖️",
+    "descrizione": "Zavorra in acciaio expo.",
+    "peso": 100,
+    "cap_bilico": 240,
+    "cap_camion_gru": 235,
+    "cap_nostro_mezzo": 10,
+    "soggetto_gestione_carico": true
   },
   {
     "nome": "Kit LED",
