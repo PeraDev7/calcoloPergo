@@ -12,6 +12,17 @@
     "camion_gru_eur_km": 2
   },
   "sicurezza_percentuale_auto": 5,
+  "parametri_noleggi": {
+    "muletto_settimana": 800,
+    "muletto_mese": 1200,
+    "muletto_2mesi": 2300,
+    "scala_primo_giorno": 600,
+    "scala_giorno_extra": 100,
+    "gru_primo_giorno": 600,
+    "gru_giorno_extra": 100,
+    "camion_gru_primo_giorno": 500,
+    "camion_gru_giorno_extra": 80
+  },
   "parametri_installazione": {
     "km_soglia_trasferta_interna": 150,
     "velocita_media_trasferta_kmh": 60,
@@ -21,5 +32,35 @@
     "costo_orario_esterno": 40,
     "rimborso_giornaliero_esterno": 25,
     "costo_extra_giorno_interno_trasferta_lunga": 80
-  }
+  },
+  "sconto_ore_scaglioni": [
+    { "min": 1, "max": 6, "sconto_pct": 0.0 },
+    { "min": 7, "max": 8, "sconto_pct": 2.0 },
+    { "min": 9, "max": 10, "sconto_pct": 3.0 },
+    { "min": 11, "max": 15, "sconto_pct": 3.2 },
+    { "min": 16, "max": 20, "sconto_pct": 3.5 },
+    { "min": 21, "max": 25, "sconto_pct": 3.6 },
+    { "min": 26, "max": 30, "sconto_pct": 3.8 },
+    { "min": 31, "max": 35, "sconto_pct": 3.8 },
+    { "min": 36, "max": 40, "sconto_pct": 3.9 },
+    { "min": 41, "max": 45, "sconto_pct": 4.0 },
+    { "min": 46, "max": 50, "sconto_pct": 4.0 },
+    { "min": 51, "max": 75, "sconto_pct": 5.0 },
+    { "min": 76, "max": 100, "sconto_pct": 5.6 },
+    { "min": 101, "max": 125, "sconto_pct": 6.0 },
+    { "min": 126, "max": 150, "sconto_pct": 6.0 },
+    { "min": 151, "max": 175, "sconto_pct": 6.3 },
+    { "min": 176, "max": 200, "sconto_pct": 6.5 },
+    { "min": 201, "max": 250, "sconto_pct": 7.0 },
+    { "min": 251, "max": 300, "sconto_pct": 7.5 },
+    { "min": 301, "max": 350, "sconto_pct": 8.0 },
+    { "min": 351, "max": 400, "sconto_pct": 8.0 },
+    { "min": 401, "max": 450, "sconto_pct": 8.2 },
+    { "min": 451, "max": 500, "sconto_pct": 8.4 },
+    { "min": 501, "max": 600, "sconto_pct": 8.6 },
+    { "min": 601, "max": 700, "sconto_pct": 8.8 },
+    { "min": 701, "max": 800, "sconto_pct": 8.9 },
+    { "min": 801, "max": 900, "sconto_pct": 9.0 },
+    { "min": 901, "max": 1000, "sconto_pct": 9.5 }
+  ]
 }

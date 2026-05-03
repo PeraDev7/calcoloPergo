@@ -60,6 +60,7 @@
                         <button type="button" class="modal-tab" data-tab="ore-posti">Ore per Posto Auto</button>
                         <button type="button" class="modal-tab" data-tab="accessori">Ore Accessori</button>
                         <button type="button" class="modal-tab" data-tab="trasporto">Trasporto</button>
+                        <button type="button" class="modal-tab" data-tab="sconti">Sconti</button>
                     </div>
 
                     <!-- Tab Ore Base -->
@@ -152,6 +153,30 @@
                                 <label for="edit-nostro-mezzo">Nostro mezzo (quantità)</label>
                                 <input type="number" id="edit-nostro-mezzo" min="0">
                             </div>
+                        </div>
+                    </div>
+
+                    <!-- Tab Sconti -->
+                    <div class="tab-content" data-tab-content="sconti">
+                        <div class="parametri-group">
+                            <h3 class="parametri-group-titolo">Fasce Sconto Personalizzate</h3>
+                            <p class="hint">Se configurate, queste fasce sovrascrivono quelle globali per questo specifico prodotto.</p>
+                            
+                            <div class="sconti-header-row">
+                                <span>Min Posti</span>
+                                <span>Max Posti</span>
+                                <span>Sconto (%)</span>
+                                <span></span>
+                            </div>
+                            <div id="container-sconti-prodotto" class="sconti-scaglioni-lista">
+                                <!-- Inserito da JS -->
+                            </div>
+                            <button type="button" id="btn-aggiungi-scaglione-prodotto" class="btn btn-secondary btn-small" style="margin-top: 10px;">
+                                + Aggiungi fascia personalizzata
+                            </button>
+                            <button type="button" id="btn-reset-sconti-prodotto" class="btn btn-secondary btn-small" style="margin-top: 10px; margin-left: 10px;">
+                                Usa sconti globali
+                            </button>
                         </div>
                     </div>
                 </div>

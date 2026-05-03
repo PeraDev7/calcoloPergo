@@ -41,7 +41,7 @@
       ricarico_noleggi_pct: 0,
     },
   };
-  let checkSubmitFn = () => {};
+  let checkSubmitFn = () => { };
   let serviziPersonalizzatiCounter = 0;
   let modalAccessoriSlot = null;
   let modalAccessoriDraft = null;
@@ -56,8 +56,8 @@
   const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
 
   const LS_DATA_KEYS = {
-    'costanti.json':  'calcoloPergo_data_costanti',
-    'prodotti.json':  'calcoloPergo_data_prodotti',
+    'costanti.json': 'calcoloPergo_data_costanti',
+    'prodotti.json': 'calcoloPergo_data_prodotti',
     'trasferta.json': 'calcoloPergo_data_trasferta',
   };
 
@@ -67,7 +67,7 @@
       try {
         const stored = localStorage.getItem(lsKey);
         if (stored) return JSON.parse(stored);
-      } catch (_) {}
+      } catch (_) { }
     }
     const res = await fetch(path);
     if (!res.ok) throw new Error(`Errore caricamento ${path}`);
@@ -96,8 +96,9 @@
     const ok = await initData();
     if (ok) {
       initParametriFromDefaults();
-      buildContainerProdotti();
-      mostraNascondiDomande();
+      // Non ricostruiamo il container per non perdere le selezioni correnti,
+      // ma aggiorniamo i calcoli con i nuovi parametri.
+      aggiornaCampiCalcolati();
     }
   }
 
@@ -127,13 +128,17 @@
     const cp = state.costanti?.coordinate_partenza;
     state.parametri.lat_partenza = cp?.lat != null ? cp.lat : null;
     state.parametri.lon_partenza = cp?.lon != null ? cp.lon : null;
-    state.parametri.muletto_settimana = 800;
-    state.parametri.muletto_mese = 1200;
-    state.parametri.muletto_2mesi = 2300;
-    state.parametri.scala_primo_giorno = 600;
-    state.parametri.scala_giorno_extra = 100;
-    state.parametri.gru_primo_giorno = 600;
-    state.parametri.gru_giorno_extra = 100;
+    const nol = state.costanti?.parametri_noleggi || {};
+    state.parametri.muletto_settimana = nol.muletto_settimana ?? 800;
+    state.parametri.muletto_mese = nol.muletto_mese ?? 1200;
+    state.parametri.muletto_2mesi = nol.muletto_2mesi ?? 2300;
+    state.parametri.scala_primo_giorno = nol.scala_primo_giorno ?? 600;
+    state.parametri.scala_giorno_extra = nol.scala_giorno_extra ?? 100;
+    state.parametri.gru_primo_giorno = nol.gru_primo_giorno ?? 600;
+    state.parametri.gru_giorno_extra = nol.gru_giorno_extra ?? 100;
+    state.parametri.camion_gru_primo_giorno = nol.camion_gru_primo_giorno ?? 500;
+    state.parametri.camion_gru_giorno_extra = nol.camion_gru_giorno_extra ?? 80;
+
     const firstTrasporti = state.trasporti?.length && state.trasporti[0];
     state.parametri.costo_km_trasporto = firstTrasporti?.COSTO_KM != null ? firstTrasporti.COSTO_KM : null;
 
@@ -160,7 +165,6 @@
       nostro_mezzo_eur_km_carburante: 0.08,
       nostro_mezzo_eur_km_usura: 0.12,
       bilico_eur_km: 2.2,
-      camion_gru_eur_km: 2,
     };
     Object.keys(defTrm).forEach((k) => {
       const v = ptm[k] != null && ptm[k] !== '' ? Number(ptm[k]) : null;
@@ -328,8 +332,7 @@
 
   function getRateKmTrasportoMerci(modalita) {
     if (modalita === 'nostro_mezzo') return getEurKmNostroMezzoSomma();
-    if (modalita === 'bilico') return getParametro('bilico_eur_km') ?? 2.2;
-    return getParametro('camion_gru_eur_km') ?? 2;
+    return getParametro('bilico_eur_km') ?? 2.2;
   }
 
   function getCapAccessorioByModalita(cfg, modalita) {
@@ -626,8 +629,8 @@
         if (t.matches('input[type="number"]')) {
           const item = modalAccessoriDraft.find((x) => x.codice === codice);
           if (item) {
-             item.quantita = Math.max(0, parseNumero(t.value, 0));
-             item.custom_qty = true;
+            item.quantita = Math.max(0, parseNumero(t.value, 0));
+            item.custom_qty = true;
           }
           renderModalAccessoriRiepilogo();
         }
@@ -768,17 +771,17 @@
   function rimuoviProdotto(slot) {
     const slotEl = $(`.slot-prodotto[data-slot="${slot}"]`);
     if (!slotEl) return;
-    
+
     const selectProdotto = $(`#input-prodotto-${slot}`);
     if (selectProdotto) selectProdotto.value = '';
     state.accessoriSelezioni[slot] = [];
     aggiornaRiepilogoAccessoriSlot(slot);
-    
+
     slotEl.hidden = true;
-    
+
     const btnAdd = $('#btn-aggiungi-prodotto');
     if (btnAdd) btnAdd.hidden = false;
-    
+
     aggiornaValori();
     checkSubmitFn();
   }
@@ -1053,23 +1056,26 @@
     const mulActv = $('#toggle-muletto')?.checked;
     const scaActv = $('#toggle-scala')?.checked;
     const gruActv = $('#toggle-gru')?.checked;
+    const cgruActv = $('#toggle-camion-gru')?.checked;
     state.valori.giorni_noleggio_muletto = mulActv ? (parseInt($('#input-giorni-muletto')?.value, 10) || 7) : 0;
-    state.valori.costo_noleggio_muletto  = mulActv ? calcoloCostoMuletto(state.valori.giorni_noleggio_muletto) : null;
-    state.valori.giorni_noleggio_scala   = scaActv ? (parseInt($('#input-giorni-scala')?.value, 10) || 1) : 0;
-    state.valori.costo_noleggio_scala    = scaActv ? calcoloCostoScala(state.valori.giorni_noleggio_scala) : null;
-    state.valori.giorni_presenza_gru     = gruActv ? (parseInt($('#input-giorni-gru')?.value, 10) || 1) : 0;
-    state.valori.costo_gru_totale        = gruActv ? getCostoGruTotale(state.valori.giorni_presenza_gru) : 0;
+    state.valori.costo_noleggio_muletto = mulActv ? calcoloCostoMuletto(state.valori.giorni_noleggio_muletto) : null;
+    state.valori.giorni_noleggio_scala = scaActv ? (parseInt($('#input-giorni-scala')?.value, 10) || 1) : 0;
+    state.valori.costo_noleggio_scala = scaActv ? calcoloCostoScala(state.valori.giorni_noleggio_scala) : null;
+    state.valori.giorni_camion_gru = cgruActv ? (parseInt($('#input-giorni-camion-gru')?.value, 10) || 1) : 0;
+    state.valori.costo_camion_gru_totale = cgruActv ? calcoloCostoCamionGru(state.valori.giorni_camion_gru) : 0;
+    state.valori.giorni_presenza_gru = gruActv ? (parseInt($('#input-giorni-gru')?.value, 10) || 1) : 0;
+    state.valori.costo_gru_totale = gruActv ? getCostoGruTotale(state.valori.giorni_presenza_gru) : 0;
 
     state.valori.servizi_personalizzati = [];
     state.serviziPersonalizzati.forEach(servizio => {
       const descInput = $(`#servizio-desc-${servizio.id}`);
       const costoInput = $(`#servizio-costo-${servizio.id}`);
       const noteInput = $(`#servizio-note-${servizio.id}`);
-      
+
       const desc = descInput?.value.trim() || '';
       const costo = costoInput ? parseFloat(costoInput.value) || 0 : 0;
       const note = noteInput?.value.trim() || '';
-      
+
       if (desc || costo > 0) {
         state.valori.servizi_personalizzati.push({
           id: servizio.id,
@@ -1147,10 +1153,15 @@
       { min: 901, max: 1000, sconto_pct: 9.5 },
     ];
   }
+  window.getScaglioniScontoOreDefault = getScaglioniScontoOreDefault;
 
   function getScontoOrePctByPosti(prodotto, posti) {
     const scaglioniProdotto = Array.isArray(prodotto?.SCONTO_ORE_SCAGLIONI) ? prodotto.SCONTO_ORE_SCAGLIONI : null;
-    const list = (scaglioniProdotto && scaglioniProdotto.length ? scaglioniProdotto : getScaglioniScontoOreDefault())
+    const globalSconti = Array.isArray(state.costanti?.sconto_ore_scaglioni) ? state.costanti.sconto_ore_scaglioni : null;
+
+    const list = (scaglioniProdotto && scaglioniProdotto.length
+      ? scaglioniProdotto
+      : (globalSconti && globalSconti.length ? globalSconti : getScaglioniScontoOreDefault()))
       .map((x) => ({
         min: Number(x?.min),
         max: Number(x?.max),
@@ -1685,18 +1696,18 @@
       costo_esterni_stimato: costoEst,
       trasferta: trasfertaAttiva
         ? {
-            tipo_modalita: tipoTr,
-            premio_totale: premioTot,
-            giorni_premio: giorniPremio,
-            giorni_pagati_missione: giorniInt,
-            costo_viaggio_stima: costoViaggioStima,
-            hotel_notti: nottiHotel,
-            hotel_totale: hotelTot,
-            extra_utente: extraUtente,
-            totale_voci_trasferta: totaleVociTrasferta,
-            rientro_weekend: rientroWeekend,
-            premio_include_giorni_viaggio: premioInclViaggio,
-          }
+          tipo_modalita: tipoTr,
+          premio_totale: premioTot,
+          giorni_premio: giorniPremio,
+          giorni_pagati_missione: giorniInt,
+          costo_viaggio_stima: costoViaggioStima,
+          hotel_notti: nottiHotel,
+          hotel_totale: hotelTot,
+          extra_utente: extraUtente,
+          totale_voci_trasferta: totaleVociTrasferta,
+          rientro_weekend: rientroWeekend,
+          premio_include_giorni_viaggio: premioInclViaggio,
+        }
         : null,
       costo_interni_totale_con_trasferta: costoInterniComplessivo,
       totale_manodopera_stimato: totaleMan,
@@ -1765,6 +1776,15 @@
     return primo + (g - 1) * extra;
   }
 
+  /** Mezzo con gru: usa state.parametri */
+  function calcoloCostoCamionGru(giorni) {
+    const g = parseInt(giorni, 10) || 0;
+    if (g <= 0) return null;
+    const primo = getParametro('camion_gru_primo_giorno') ?? 500;
+    const extra = getParametro('camion_gru_giorno_extra') ?? 80;
+    return primo + (g - 1) * extra;
+  }
+
   /** Costo servizio gru: usa state.parametri (primo giorno + extra) */
   function getCostoGruTotale(giorni) {
     if (giorni <= 0) return 0;
@@ -1792,7 +1812,7 @@
    * modalita: nostro_mezzo | bilico | camion_gru
    */
   function calcolaDettaglioTrasportoMerci(distanzaKm, posti, modalita, prodotto) {
-    const labels = { nostro_mezzo: 'Nostro mezzo', bilico: 'Bilico', camion_gru: 'Mezzo con gru (trasporto)' };
+    const labels = { nostro_mezzo: 'Nostro mezzo', bilico: 'Bilico' };
     let cap = 0;
     if (modalita === 'nostro_mezzo') cap = Number(prodotto?.nostro_mezzo) || 0;
     else if (modalita === 'bilico') {
@@ -1809,12 +1829,10 @@
       if (hasZavorre) labels.bilico = 'Bilico (con zavorre)';
       else labels.bilico = 'Bilico (senza zavorre)';
     }
-    else cap = Number(prodotto?.camion_gru) || 0;
 
     let rateKm = 0;
     if (modalita === 'nostro_mezzo') rateKm = getEurKmNostroMezzoSomma();
-    else if (modalita === 'bilico') rateKm = getParametro('bilico_eur_km') ?? 2.2;
-    else rateKm = getParametro('camion_gru_eur_km') ?? 2;
+    else rateKm = getParametro('bilico_eur_km') ?? 2.2;
 
     if (!distanzaKm || distanzaKm <= 0 || cap <= 0) {
       return {
@@ -1830,8 +1848,8 @@
     }
 
     const viaggi = Math.ceil((Number(posti) || 0) / cap);
-    const kmAR = 2 * distanzaKm;
-    const kmTotStruttura = viaggi * kmAR;
+    const kmAR = Math.round(2 * distanzaKm * 100) / 100;
+    const kmTotStruttura = Math.round(viaggi * kmAR * 100) / 100;
     const costoStruttura = Math.round(kmTotStruttura * rateKm * 100) / 100;
 
     const accSel = state.accessoriSelezioni?.[1] || [];
@@ -1850,8 +1868,7 @@
 
       let capAcc = 0;
       if (modalita === 'nostro_mezzo') capAcc = cfg.cap_nostro_mezzo;
-      else if (modalita === 'bilico') capAcc = cfg.cap_bilico;
-      else capAcc = cfg.cap_camion_gru;
+      else capAcc = cfg.cap_bilico;
 
       if (!capAcc || capAcc <= 0) {
         avvisi.push(`Accessorio ${a.codice}: capacità carico non definita per ${labels[modalita] || modalita}.`);
@@ -1859,11 +1876,11 @@
       }
 
       const viaggiAcc = Math.ceil(qty / capAcc);
-      const kmAcc = viaggiAcc * kmAR;
+      const kmAcc = Math.round(viaggiAcc * kmAR * 100) / 100;
       const costoAcc = Math.round(kmAcc * rateKm * 100) / 100;
       viaggiAccessori += viaggiAcc;
-      kmTotAccessori += kmAcc;
-      costoAccessori += costoAcc;
+      kmTotAccessori = Math.round((kmTotAccessori + kmAcc) * 100) / 100;
+      costoAccessori = Math.round((costoAccessori + costoAcc) * 100) / 100;
       dettagliAccessori.push({ codice: a.codice, qty, cap: capAcc, viaggi: viaggiAcc, kmTot: kmAcc, costo: costoAcc });
     });
 
@@ -1921,11 +1938,11 @@
     const elAvviso = $('#avviso-trasporto-merci');
     if (elTesto) {
       const r = Number(det.rateKm) || 0;
-      elTesto.textContent = `${fmtEuro(det.costo)} — ${det.viaggiTotali || det.viaggi} viaggi, ${det.kmTot} km totali, €${r.toFixed(3)}/km (${det.etichetta})`;
+      elTesto.textContent = `${fmtEuro(det.costo)} — ${det.viaggiTotali || det.viaggi} viaggi, ${Number(det.kmTot).toFixed(2)} km totali, €${r.toFixed(2)}/km (${det.etichetta})`;
     }
     if (elHint) {
       const extra = det.viaggiAccessori > 0 ? ` + accessori: ${det.viaggiAccessori} viaggi (${fmtEuro(det.costoAccessori)})` : '';
-      elHint.textContent = `${det.etichetta}: struttura ${det.viaggi} viaggi, ${det.kmTotStruttura || det.kmTot} km.${extra}`;
+      elHint.textContent = `${det.etichetta}: struttura ${det.viaggi} viaggi, ${Number(det.kmTotStruttura).toFixed(2)} km.${extra}`;
     }
     if (elAvviso) {
       if (det.avviso) {
@@ -1942,13 +1959,16 @@
     const mulActv = $('#toggle-muletto')?.checked;
     const scaActv = $('#toggle-scala')?.checked;
     const gruActv = $('#toggle-gru')?.checked;
+    const cgruActv = $('#toggle-camion-gru')?.checked;
     const costoMul = mulActv ? calcoloCostoMuletto($('#input-giorni-muletto')?.value) : null;
     const costoSca = scaActv ? calcoloCostoScala($('#input-giorni-scala')?.value) : null;
+    const costoCgru = cgruActv ? calcoloCostoCamionGru($('#input-giorni-camion-gru')?.value) : null;
     const giorniGru = parseInt($('#input-giorni-gru')?.value, 10) || 1;
     const costoGruTot = gruActv ? getCostoGruTotale(giorniGru) : 0;
 
     const cMul = costoMul != null ? costoMul : 0;
     const cSca = costoSca != null ? costoSca : 0;
+    const cCgru = costoCgru != null ? costoCgru : 0;
     const servPers = sommaServiziPersonalizzati();
 
     const trVoci = Math.max(0, Number(st?.trasferta?.totale_voci_trasferta) || 0);
@@ -1956,7 +1976,7 @@
 
     const baseOre = manSolo + servPers;
     const baseTrasporti = det.costo + trVoci;
-    const baseNoleggi = cMul + cSca + costoGruTot;
+    const baseNoleggi = cMul + cSca + costoGruTot + cCgru;
 
     const pctRicGen = Math.max(0, getParametro('ricarico_generale_pct') ?? 0);
     const pctRicOre = Math.max(0, getParametro('ricarico_ore_lavoro_pct') ?? 0);
@@ -2000,10 +2020,23 @@
     if (elRm) elRm.textContent = mulActv && costoMul != null ? fmtEuro(costoMul) : '—';
     const elRs = $('#riep-scala');
     if (elRs) elRs.textContent = scaActv && costoSca != null ? fmtEuro(costoSca) : '—';
+    const elRcgru = $('#riep-camion-gru');
+    if (elRcgru) elRcgru.textContent = cgruActv && costoCgru != null ? fmtEuro(costoCgru) : '—';
     const elRg = $('#riep-gru-servizio');
-    if (elRg) elRg.textContent = gruActv ? fmtEuro(costoGruTot) : '-';
+    if (elRg) elRg.textContent = gruActv ? fmtEuro(costoGruTot) : '—';
     const elRp = $('#riep-servizi-pers');
     if (elRp) elRp.textContent = servPers > 0 ? fmtEuro(servPers) : '€ 0';
+
+    const postiCorrenti = getPostiAutoCorrenti();
+    if (postiCorrenti > 0) {
+      const elRmanP = $('#riep-manodopera-posto');
+      if (elRmanP) elRmanP.textContent = fmtEuro((baseOre + ricOre) / postiCorrenti);
+      const elRtP = $('#riep-trasporto-posto');
+      if (elRtP) elRtP.textContent = fmtEuro((baseTrasporti + ricTrasporti) / postiCorrenti);
+      const elRnP = $('#riep-noleggi-posto');
+      if (elRnP) elRnP.textContent = fmtEuro((baseNoleggi + ricNoleggi) / postiCorrenti);
+    }
+
     const elRr = $('#riep-ricarico-tot');
     if (elRr) elRr.textContent = fmtEuro(ricTot + ricSicurezza);
     const elSub = $('#riep-subtotale');
@@ -2013,7 +2046,6 @@
 
     const elPostoBox = $('#blocco-totale-per-posto');
     const elPostoVal = $('#valore-totale-per-posto');
-    const postiCorrenti = getPostiAutoCorrenti();
     if (elPostoBox && elPostoVal) {
       if (postiCorrenti > 0 && totaleFin > 0) {
         elPostoBox.hidden = false;
@@ -2058,22 +2090,129 @@
       totale_installazione: totaleFin,
       testo_trasporto_struttura: testoTrasporto,
       testo_costi_sicurezza: testoSicurezza,
-      /* totali per sezione (usati nell'esportazione PDF) */
       totale_sezione_installazione: Math.round((baseOre + ricOre) * 100) / 100,
       totale_sezione_trasporto: Math.round((baseTrasporti + ricTrasporti) * 100) / 100,
       totale_sezione_noleggi_sicurezza: Math.round((baseNoleggi + ricNoleggi + sicEuro + ricSicurezza) * 100) / 100,
     };
 
-    state.valori.costo_trasporto_struttura_stimato = det.costo;
-    state.valori.modalita_trasporto_merci = modalita;
+    // Flattening some values for the technical detail view
+    state.valori.costo_manodopera_totale = man;
+    state.valori.costo_trasporto_merci = det.costo;
+    state.valori.costo_km_trasporto = det.rateKm;
+    state.valori.totale_finale_installazione = totaleFin;
+    state.valori.sicurezza_importo = sicEuro;
+    state.valori.ricarico_ore_lavoro = ricOre;
+    state.valori.ricarico_trasporti = ricTrasporti;
+    state.valori.ricarico_noleggi = ricNoleggi;
+
+    if (st) {
+      state.valori.ore_installazione_totale = st.ore_lavoro_cantiere_totale_lordo || 0;
+      state.valori.ore_trasferta_totale = st.ore_trasferta_totale || 0;
+      state.valori.ore_totali_lavoro = st.ore_lavoro_cantiere_totale || 0;
+      // accessories hours if available
+      state.valori.ore_accessori_totale = st.ore_accessori_totale || 0;
+    }
+
+    aggiornaDettaglioTecnicoCalcoli();
+  }
+
+  function aggiornaDettaglioTecnicoCalcoli() {
+    const container = $('#dettaglio-calcoli-content');
+    if (!container) return;
+
+    const data = state.valori;
+    const riepilogo = data.costi_installazione_riepilogo;
+    const st = data.stima_installazione;
+
+    // Check minimum requirements
+    const hasDist = state.distanzaKm != null;
+    const hasProd = data.prodotti && data.prodotti[0];
+
+    if (!hasDist || !hasProd) {
+      container.innerHTML = '<div class="dettaglio-vuoto">Inserisci un indirizzo e seleziona un prodotto per visualizzare il dettaglio tecnico.</div>';
+      return;
+    }
+
+    // If we have distance and product, we should be able to show something.
+    // We use data.costo_manodopera_totale or the riepilogo or the stima.
+    const manodopera = data.costo_manodopera_totale || (riepilogo?.manodopera_stimata) || (st?.totale_manodopera_stimato) || 0;
+
+    const fmtE = (v) => fmtEuro(v || 0);
+    const fmtN = (v, d = 2) => (v || 0).toLocaleString('it-IT', { minimumFractionDigits: d, maximumFractionDigits: d });
+
+    let html = '';
+
+    // 1. MANODOPERA
+    html += `<div class="dettaglio-sezione">
+        <div class="dettaglio-sezione-titolo">1. Manodopera e Ore</div>`;
+
+    if (st) {
+      html += `<div class="dettaglio-riga"><span>Ore montaggio struttura (totali slot):</span> <span>${fmtN(st.ore_lavoro_cantiere_totale_lordo)} h</span></div>`;
+      if (st.ore_accessori_totale > 0) {
+        html += `<div class="dettaglio-riga"><span>Ore montaggio accessori:</span> <span>${fmtN(st.ore_accessori_totale)} h</span></div>`;
+      }
+      if (st.ore_lavoro_cantiere_sconto_totale > 0) {
+        html += `<div class="dettaglio-riga"><span>Sconto ore (per quantità):</span> <span style="color:var(--success)">-${fmtN(st.ore_lavoro_cantiere_sconto_totale)} h</span></div>`;
+      }
+      html += `<div class="dettaglio-riga"><span><strong>Totale ore effettive cantiere:</strong></span> <span class="dettaglio-evidenziato">${fmtN(st.ore_lavoro_cantiere_totale)} h</span></div>
+            <div class="dettaglio-nota">Tecnici: ${st.tecnici_interni} interni, ${st.tecnici_esterni} esterni.</div>`;
+    } else {
+      html += `<div class="dettaglio-riga"><span>Dati ore non ancora disponibili.</span></div>`;
+    }
+
+    const ricaricoOre = data.ricarico_ore_lavoro || riepilogo?.ricarico_ore_lavoro || 0;
+    html += `<div class="dettaglio-riga" style="margin-top:0.5rem;"><span>Costo base manodopera:</span> <span>${fmtE(manodopera - ricaricoOre)}</span></div>
+        <div class="dettaglio-riga"><span>Ricarico manodopera applicato:</span> <span>${fmtE(ricaricoOre)}</span></div>
+    </div>`;
+
+    // 2. LOGISTICA
+    const modTr = data.modalita_trasporto_merci || riepilogo?.modalita_trasporto_merci || 'N/A';
+    const costoTr = data.costo_trasporto_merci || riepilogo?.costo_trasporto_struttura || 0;
+    const ricaricoTr = data.ricarico_trasporti || riepilogo?.ricarico_trasporti || 0;
+
+    html += `<div class="dettaglio-sezione">
+        <div class="dettaglio-sezione-titolo">2. Logistica e Trasporto</div>
+        <div class="dettaglio-riga"><span>Distanza calcolata (A/R):</span> <span>${fmtN(Math.round(state.distanzaKm * 2 * 100) / 100)} km</span></div>
+        <div class="dettaglio-riga"><span>Mezzo utilizzato:</span> <span>${modTr.toUpperCase()}</span></div>
+        <div class="dettaglio-riga" style="margin-top:0.5rem;"><span>Costo base trasporto:</span> <span>${fmtE(costoTr)}</span></div>
+        <div class="dettaglio-riga"><span>Ricarico trasporto applicato:</span> <span>${fmtE(ricaricoTr)}</span></div>
+    </div>`;
+
+    // 3. NOLEGGI
+    const baseNol = riepilogo?.base_noleggi || (data.costo_noleggio_muletto || 0) + (data.costo_noleggio_scala || 0) + (data.costo_camion_gru_totale || 0) + (data.costo_gru_totale || 0);
+    const ricaricoNol = data.ricarico_noleggi || riepilogo?.ricarico_noleggi || 0;
+
+    if (baseNol > 0 || ricaricoNol > 0) {
+      html += `<div class="dettaglio-sezione">
+            <div class="dettaglio-sezione-titolo">3. Noleggi e Attrezzature</div>`;
+      if (data.costo_noleggio_muletto > 0) html += `<div class="dettaglio-riga"><span>Muletto (${data.giorni_noleggio_muletto} gg):</span> <span>${fmtE(data.costo_noleggio_muletto)}</span></div>`;
+      if (data.costo_noleggio_scala > 0) html += `<div class="dettaglio-riga"><span>Piattaforma/Scala (${data.giorni_noleggio_scala} gg):</span> <span>${fmtE(data.costo_noleggio_scala)}</span></div>`;
+      if (data.costo_camion_gru_totale > 0) html += `<div class="dettaglio-riga"><span>Mezzo con gru (${data.giorni_camion_gru} gg):</span> <span>${fmtE(data.costo_camion_gru_totale)}</span></div>`;
+      if (data.costo_gru_totale > 0) html += `<div class="dettaglio-riga"><span>Gru esterna (${data.giorni_presenza_gru} gg):</span> <span>${fmtE(data.costo_gru_totale)}</span></div>`;
+      html += `<div class="dettaglio-riga" style="margin-top:0.5rem;"><span>Ricarico noleggi applicato:</span> <span>${fmtE(ricaricoNol)}</span></div>
+        </div>`;
+    }
+
+    // 4. RIEPILOGO
+    const totaleFin = data.totale_finale_installazione || riepilogo?.totale_installazione || 0;
+    const sicEuro = data.sicurezza_importo || riepilogo?.sicurezza_importo || 0;
+
+    html += `<div class="dettaglio-sezione">
+        <div class="dettaglio-sezione-titolo">4. Riepilogo Finale</div>
+        <div class="dettaglio-riga"><span>Posti auto:</span> <span>${data.numero_posti_auto}</span></div>
+        <div class="dettaglio-riga"><span><strong>Prezzo finale installazione:</strong></span> <span class="dettaglio-evidenziato">${fmtE(totaleFin)}</span></div>
+        <div class="dettaglio-riga"><span>Quota sicurezza (inclusa):</span> <span>${fmtE(sicEuro)}</span></div>
+    </div>`;
+
+    container.innerHTML = html;
   }
 
   function aggiornaCampiCalcolati() {
     aggiornaValori();
-
     const mulActv = $('#toggle-muletto')?.checked;
     const scaActv = $('#toggle-scala')?.checked;
     const gruActv = $('#toggle-gru')?.checked;
+    const cgruActv = $('#toggle-camion-gru')?.checked;
 
     const elMuletto = $('#valore-costo-muletto');
     if (elMuletto) {
@@ -2095,6 +2234,16 @@
       }
     }
 
+    const elCamionGru = $('#valore-costo-camion-gru');
+    if (elCamionGru) {
+      if (cgruActv) {
+        const costo = calcoloCostoCamionGru($('#input-giorni-camion-gru')?.value);
+        elCamionGru.textContent = costo != null ? `€ ${costo}` : '—';
+      } else {
+        elCamionGru.textContent = '—';
+      }
+    }
+
     const elGru = $('#valore-gru-trasporto');
     if (elGru) {
       if (gruActv) {
@@ -2102,7 +2251,7 @@
         const costoTotale = getCostoGruTotale(giorniGru);
         elGru.textContent = fmtEuro(costoTotale);
       } else {
-        elGru.textContent = '-';
+        elGru.textContent = '—';
       }
     }
 
@@ -2130,28 +2279,28 @@
   }
 
   function bindIndirizzoUI() {
-    const btnGeocode  = $('#btn-geocode');
-    const inputEl     = $('#input-indirizzo');
-    const msgDist     = $('#msg-distanza');
-    const msgErr      = $('#msg-errore-geocode');
-    const tabDigita   = $('#tab-digita');
-    const tabMappa    = $('#tab-mappa');
+    const btnGeocode = $('#btn-geocode');
+    const inputEl = $('#input-indirizzo');
+    const msgDist = $('#msg-distanza');
+    const msgErr = $('#msg-errore-geocode');
+    const tabDigita = $('#tab-digita');
+    const tabMappa = $('#tab-mappa');
     const panelDigita = $('#panel-digita');
-    const panelMappa  = $('#panel-mappa');
-    const acList      = $('#autocomplete-list');
+    const panelMappa = $('#panel-mappa');
+    const acList = $('#autocomplete-list');
     if (!inputEl) return;
 
-    let acTimer   = null;
-    let mapInst   = null;
+    let acTimer = null;
+    let mapInst = null;
     let mapMarker = null;
 
     /* ── helper: imposta distanza da lat/lon già noti ── */
     function applicaDistanza(km, lat, lon) {
-      state.distanzaKm   = km;
+      state.distanzaKm = km;
       state.coordCantiere = { lat, lon };
       msgDist.textContent = `Distanza: ${km} km`;
-      msgDist.hidden      = false;
-      msgErr.hidden       = true;
+      msgDist.hidden = false;
+      msgErr.hidden = true;
       const valDist = $('#valore-distanza');
       if (valDist) valDist.textContent = `${km} km`;
       abilitaProdotti();
@@ -2180,7 +2329,7 @@
       tabMappa.classList.toggle('active', !isDigita);
       tabMappa.setAttribute('aria-selected', String(!isDigita));
       panelDigita.hidden = !isDigita;
-      panelMappa.hidden  = isDigita;
+      panelMappa.hidden = isDigita;
       if (!isDigita) {
         if (!mapInst) initMap();
         else setTimeout(() => google.maps.event.trigger(mapInst, 'resize'), 50);
@@ -2188,7 +2337,7 @@
     }
 
     tabDigita?.addEventListener('click', () => switchTab('digita'));
-    tabMappa?.addEventListener('click',  () => switchTab('mappa'));
+    tabMappa?.addEventListener('click', () => switchTab('mappa'));
 
     /* ── AUTOCOMPLETE ── */
     function chiudiAc() {
@@ -2242,7 +2391,7 @@
     /* ── BOTTONE "Calcola distanza" (geocode manuale) ── */
     btnGeocode?.addEventListener('click', async () => {
       const indirizzo = inputEl.value.trim();
-      msgErr.hidden  = true;
+      msgErr.hidden = true;
       msgDist.hidden = true;
       if (!indirizzo) {
         msgErr.textContent = 'Inserisci un indirizzo.';
@@ -2280,7 +2429,7 @@
 
     /* ── MAPPA Google Maps ── */
     function initMap() {
-      const cp     = getCoordinatePartenza();
+      const cp = getCoordinatePartenza();
       const center = cp ? { lat: cp.lat, lng: cp.lon } : { lat: 44.0, lng: 11.5 };
 
       mapInst = new google.maps.Map(document.getElementById('mappa-cantiere'), {
@@ -2317,7 +2466,7 @@
 
         msgDist.textContent = 'Calcolo indirizzo e distanza…';
         msgDist.hidden = false;
-        msgErr.hidden  = true;
+        msgErr.hidden = true;
 
         const nome = await window.GEOCODE.reverseGeocode(lat, lng);
         inputEl.value = nome || `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
@@ -2332,17 +2481,17 @@
         const targetId = e.target.getAttribute('data-target');
         const input = $(`#${targetId}`);
         if (!input) return;
-        
+
         const min = parseInt(input.getAttribute('min'), 10) || 1;
         const max = parseInt(input.getAttribute('max'), 10) || 365;
         let val = parseInt(input.value, 10) || min;
-        
+
         if (e.target.classList.contains('btn-piu')) {
           val = Math.min(val + 1, max);
         } else if (e.target.classList.contains('btn-meno')) {
           val = Math.max(val - 1, min);
         }
-        
+
         input.value = val;
         input.dispatchEvent(new Event('input', { bubbles: true }));
         input.dispatchEvent(new Event('change', { bubbles: true }));
@@ -2417,7 +2566,7 @@
         aggiornaValori();
         aggiornaCampiCalcolati();
       }
-      if (e.target.matches('#input-tecnici-interni, #input-tecnici-esterni, #input-giorni-muletto, #input-giorni-scala, #input-giorni-gru')) {
+      if (e.target.matches('#input-tecnici-interni, #input-tecnici-esterni, #input-giorni-muletto, #input-giorni-scala, #input-giorni-gru, #input-giorni-camion-gru')) {
         aggiornaValori();
         aggiornaCampiCalcolati();
       }
@@ -2462,20 +2611,20 @@
     if (!btn) return;
     btn.addEventListener('click', () => {
       if (!confirm('Vuoi davvero azzerare il calcolo corrente? Tutti i dati inseriti andranno persi.')) return;
-      try { sessionStorage.setItem('calcoloPergo_reset', '1'); } catch (_) {}
+      try { sessionStorage.setItem('calcoloPergo_reset', '1'); } catch (_) { }
       window.location.reload();
     });
   }
 
   /* ── Esporta PDF ── */
   function bindEsportaPdf() {
-    const btnApri   = $('#btn-esporta-pdf');
-    const modal     = $('#modal-esporta-pdf');
-    const overlay   = $('#modal-esporta-pdf-overlay');
+    const btnApri = $('#btn-esporta-pdf');
+    const modal = $('#modal-esporta-pdf');
+    const overlay = $('#modal-esporta-pdf-overlay');
     const btnChiudi = $('#btn-chiudi-modal-esporta-pdf');
-    const btnAnnulla= $('#btn-annulla-esporta-pdf');
+    const btnAnnulla = $('#btn-annulla-esporta-pdf');
     const btnGenera = $('#btn-genera-pdf');
-    const msgNessuna= $('#msg-esporta-pdf-nessuna');
+    const msgNessuna = $('#msg-esporta-pdf-nessuna');
 
     function apri() {
       if (modal) modal.hidden = false;
@@ -2485,16 +2634,16 @@
       if (msgNessuna) msgNessuna.hidden = true;
     }
 
-    if (btnApri)    btnApri.addEventListener('click', apri);
-    if (btnChiudi)  btnChiudi.addEventListener('click', chiudi);
+    if (btnApri) btnApri.addEventListener('click', apri);
+    if (btnChiudi) btnChiudi.addEventListener('click', chiudi);
     if (btnAnnulla) btnAnnulla.addEventListener('click', chiudi);
-    if (overlay)    overlay.addEventListener('click', chiudi);
+    if (overlay) overlay.addEventListener('click', chiudi);
 
     if (btnGenera) {
       btnGenera.addEventListener('click', () => {
-        const sezInst  = !!$('#esporta-sez-installazione')?.checked;
-        const sezTrsp  = !!$('#esporta-sez-trasporto')?.checked;
-        const sezNol   = !!$('#esporta-sez-noleggi')?.checked;
+        const sezInst = !!$('#esporta-sez-installazione')?.checked;
+        const sezTrsp = !!$('#esporta-sez-trasporto')?.checked;
+        const sezNol = !!$('#esporta-sez-noleggi')?.checked;
 
         if (!sezInst && !sezTrsp && !sezNol) {
           if (msgNessuna) msgNessuna.hidden = false;
@@ -2509,7 +2658,7 @@
     // ── Copia per CRM ──
     function testoSezionePerCrm(sez) {
       const indirizzo = (state.valori?.indirizzo_cantiere || '').trim() || '—';
-      const comune    = estraiComuneDaIndirizzo(indirizzo) || indirizzo;
+      const comune = estraiComuneDaIndirizzo(indirizzo) || indirizzo;
 
       if (sez === 'installazione') {
         return `Costi installazione pergole fotovoltaiche presso cantiere di ${comune} – ${indirizzo}\n\n` +
@@ -2564,7 +2713,7 @@
     }
 
     const indirizzo = (state.valori.indirizzo_cantiere || '').trim() || '—';
-    const comune    = estraiComuneDaIndirizzo(indirizzo) || indirizzo;
+    const comune = estraiComuneDaIndirizzo(indirizzo) || indirizzo;
 
     const fmtE = (v) => {
       if (v == null || isNaN(v)) return '—';
@@ -2603,9 +2752,9 @@
     }
 
     if (sezNol) {
-      const totale   = riepilogo.totale_sezione_noleggi_sicurezza;
-      const sicEuro  = riepilogo.sicurezza_inclusa ? (riepilogo.sicurezza_importo || 0) : 0;
-      const subtNol  = Math.round((totale - sicEuro) * 100) / 100;
+      const totale = riepilogo.totale_sezione_noleggi_sicurezza;
+      const sicEuro = riepilogo.sicurezza_inclusa ? (riepilogo.sicurezza_importo || 0) : 0;
+      const subtNol = Math.round((totale - sicEuro) * 100) / 100;
       html += `<div class="pdf-section">
         <h2>COSTI NOLEGGIO ATTREZZATURE E SICUREZZA</h2>
         <h3>Costi noleggio attrezzature e sicurezza cantiere Pergosolar \u2013 ${comune}</h3>
@@ -2639,7 +2788,7 @@
     bindEsportaPdf();
     bindNuovoCalcolo();
     if (sessionStorage.getItem('calcoloPergo_reset') === '1') {
-      try { localStorage.removeItem(DRAFT_STORAGE_KEY); sessionStorage.removeItem('calcoloPergo_reset'); } catch (_) {}
+      try { localStorage.removeItem(DRAFT_STORAGE_KEY); sessionStorage.removeItem('calcoloPergo_reset'); } catch (_) { }
     } else {
       ripristinaBozzaLocale();
     }

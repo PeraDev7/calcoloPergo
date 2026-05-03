@@ -40,6 +40,43 @@
 
     popolaTabCostanti();
     popolaTabTrasferta();
+    popolaTabSconti();
+  }
+
+  function popolaTabSconti() {
+    const container = $('#container-sconti-scaglioni');
+    if (!container) return;
+    container.innerHTML = '';
+
+    const list = modalState.costanti.sconto_ore_scaglioni || [];
+    if (list.length === 0 && window.getScaglioniScontoOreDefault) {
+      // Se non ci sono sconti salvati, usa i default di app.js
+      modalState.costanti.sconto_ore_scaglioni = window.getScaglioniScontoOreDefault();
+    }
+    
+    (modalState.costanti.sconto_ore_scaglioni || []).forEach((s) => {
+      aggiungiRigaScaglione(s);
+    });
+  }
+
+  function aggiungiRigaScaglione(data = { min: 1, max: 1, sconto_pct: 0 }) {
+    const container = $('#container-sconti-scaglioni');
+    if (!container) return;
+
+    const row = document.createElement('div');
+    row.className = 'sconti-scaglione-item';
+    row.innerHTML = `
+        <input type="number" class="scaglione-min" value="${data.min}" min="1" step="1">
+        <input type="number" class="scaglione-max" value="${data.max}" min="1" step="1">
+        <input type="number" class="scaglione-pct" value="${data.sconto_pct}" min="0" step="0.1">
+        <button type="button" class="btn-rimuovi-scaglione" title="Rimuovi fascia">✕</button>
+    `;
+
+    row.querySelector('.btn-rimuovi-scaglione').addEventListener('click', () => {
+      row.remove();
+    });
+
+    container.appendChild(row);
   }
 
   function popolaTabCostanti() {
@@ -57,14 +94,19 @@
     const scalaGiorno = $('#param-scala-giorno');
     const gruPrimo = $('#param-gru-primo');
     const gruGiorno = $('#param-gru-giorno');
+    const cgruPrimo = $('#param-camion-gru-primo');
+    const cgruGiorno = $('#param-camion-gru-giorno');
 
-    if (mulettoSett) mulettoSett.value = window.APP_STATE?.parametri?.muletto_settimana ?? 800;
-    if (mulettoMese) mulettoMese.value = window.APP_STATE?.parametri?.muletto_mese ?? 1200;
-    if (muletto2Mesi) muletto2Mesi.value = window.APP_STATE?.parametri?.muletto_2mesi ?? 2300;
-    if (scalaPrimo) scalaPrimo.value = window.APP_STATE?.parametri?.scala_primo_giorno ?? 600;
-    if (scalaGiorno) scalaGiorno.value = window.APP_STATE?.parametri?.scala_giorno_extra ?? 100;
-    if (gruPrimo) gruPrimo.value = window.APP_STATE?.parametri?.gru_primo_giorno ?? 600;
-    if (gruGiorno) gruGiorno.value = window.APP_STATE?.parametri?.gru_giorno_extra ?? 100;
+    const nol = modalState.costanti?.parametri_noleggi || {};
+    if (mulettoSett) mulettoSett.value = nol.muletto_settimana ?? 800;
+    if (mulettoMese) mulettoMese.value = nol.muletto_mese ?? 1200;
+    if (muletto2Mesi) muletto2Mesi.value = nol.muletto_2mesi ?? 2300;
+    if (scalaPrimo) scalaPrimo.value = nol.scala_primo_giorno ?? 600;
+    if (scalaGiorno) scalaGiorno.value = nol.scala_giorno_extra ?? 100;
+    if (gruPrimo) gruPrimo.value = nol.gru_primo_giorno ?? 600;
+    if (gruGiorno) gruGiorno.value = nol.gru_giorno_extra ?? 100;
+    if (cgruPrimo) cgruPrimo.value = nol.camion_gru_primo_giorno ?? 500;
+    if (cgruGiorno) cgruGiorno.value = nol.camion_gru_giorno_extra ?? 80;
 
     const pi = modalState.costanti?.parametri_installazione || {};
     const ap = window.APP_STATE?.parametri || {};
@@ -107,7 +149,6 @@
     setTrm('#param-trm-carburante', 'nostro_mezzo_eur_km_carburante', defTrm.nostro_mezzo_eur_km_carburante);
     setTrm('#param-trm-usura', 'nostro_mezzo_eur_km_usura', defTrm.nostro_mezzo_eur_km_usura);
     setTrm('#param-trm-bilico', 'bilico_eur_km', defTrm.bilico_eur_km);
-    setTrm('#param-trm-camion-gru', 'camion_gru_eur_km', defTrm.camion_gru_eur_km);
 
     const pr = modalState.costanti?.parametri_ricarichi || {};
     const setRic = (id, k, def) => {
@@ -168,22 +209,20 @@
       };
     }
 
-    const mulettoSett = $('#param-muletto-settimana');
-    const mulettoMese = $('#param-muletto-mese');
-    const muletto2Mesi = $('#param-muletto-2mesi');
-    const scalaPrimo = $('#param-scala-primo');
-    const scalaGiorno = $('#param-scala-giorno');
-    const gruPrimo = $('#param-gru-primo');
-    const gruGiorno = $('#param-gru-giorno');
+    modalState.costanti.parametri_noleggi = {
+      muletto_settimana: parseFloat($('#param-muletto-settimana')?.value) || 800,
+      muletto_mese: parseFloat($('#param-muletto-mese')?.value) || 1200,
+      muletto_2mesi: parseFloat($('#param-muletto-2mesi')?.value) || 2300,
+      scala_primo_giorno: parseFloat($('#param-scala-primo')?.value) || 600,
+      scala_giorno_extra: parseFloat($('#param-scala-giorno')?.value) || 100,
+      gru_primo_giorno: parseFloat($('#param-gru-primo')?.value) || 600,
+      gru_giorno_extra: parseFloat($('#param-gru-giorno')?.value) || 100,
+      camion_gru_primo_giorno: parseFloat($('#param-camion-gru-primo')?.value) || 500,
+      camion_gru_giorno_extra: parseFloat($('#param-camion-gru-giorno')?.value) || 80
+    };
 
     if (window.APP_STATE?.parametri) {
-      if (mulettoSett) window.APP_STATE.parametri.muletto_settimana = parseFloat(mulettoSett.value) || 800;
-      if (mulettoMese) window.APP_STATE.parametri.muletto_mese = parseFloat(mulettoMese.value) || 1200;
-      if (muletto2Mesi) window.APP_STATE.parametri.muletto_2mesi = parseFloat(muletto2Mesi.value) || 2300;
-      if (scalaPrimo) window.APP_STATE.parametri.scala_primo_giorno = parseFloat(scalaPrimo.value) || 600;
-      if (scalaGiorno) window.APP_STATE.parametri.scala_giorno_extra = parseFloat(scalaGiorno.value) || 100;
-      if (gruPrimo) window.APP_STATE.parametri.gru_primo_giorno = parseFloat(gruPrimo.value) || 600;
-      if (gruGiorno) window.APP_STATE.parametri.gru_giorno_extra = parseFloat(gruGiorno.value) || 100;
+      Object.assign(window.APP_STATE.parametri, modalState.costanti.parametri_noleggi);
     }
 
     modalState.costanti.parametri_trasporto_merci = {
@@ -191,8 +230,7 @@
       nostro_mezzo_eur_km_pedaggio: parseFloat($('#param-trm-pedaggio')?.value) || 0,
       nostro_mezzo_eur_km_carburante: parseFloat($('#param-trm-carburante')?.value) || 0,
       nostro_mezzo_eur_km_usura: parseFloat($('#param-trm-usura')?.value) || 0,
-      bilico_eur_km: parseFloat($('#param-trm-bilico')?.value) || 2.2,
-      camion_gru_eur_km: parseFloat($('#param-trm-camion-gru')?.value) || 2,
+      bilico_eur_km: parseFloat($('#param-trm-bilico')?.value) || 2.2
     };
     modalState.costanti.parametri_ricarichi = {
       ricarico_generale_pct: parseFloat($('#param-ricarico-generale-pct')?.value) || 0,
@@ -250,6 +288,15 @@
       hotel_euro_per_notte: parseFloat($('#param-trf-hotel')?.value) || 75,
       costo_extra_generico_default: 0,
     };
+
+    // Raccogli sconti
+    const scontiRows = $$('.sconti-scaglione-item', $('#container-sconti-scaglioni'));
+    modalState.costanti.sconto_ore_scaglioni = scontiRows.map(row => ({
+      min: parseInt($('.scaglione-min', row).value, 10) || 1,
+      max: parseInt($('.scaglione-max', row).value, 10) || 1,
+      sconto_pct: parseFloat($('.scaglione-pct', row).value) || 0
+    })).sort((a, b) => a.min - b.min);
+
     if (window.APP_STATE) {
       window.APP_STATE.trasfertaConfig = JSON.parse(JSON.stringify(modalState.trasferta));
     }
@@ -281,20 +328,43 @@
     }
   }
 
-  function salvaSuFile(filename, data) {
-    const keys = {
-      'costanti.json':  'calcoloPergo_data_costanti',
-      'trasferta.json': 'calcoloPergo_data_trasferta',
-      'prodotti.json':  'calcoloPergo_data_prodotti',
-    };
-    const key = keys[filename];
-    if (!key) return Promise.reject(new Error(`File non gestito: ${filename}`));
+  async function salvaSuFile(filename, data) {
     try {
-      localStorage.setItem(key, JSON.stringify(data));
+      const response = await fetch(`/api/salva/${filename}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Errore durante il salvataggio di ${filename}`);
+      }
+
+      // Rimuoviamo anche dalla localStorage se presente, per evitare conflitti con dati vecchi
+      const keys = {
+        'costanti.json':  'calcoloPergo_data_costanti',
+        'trasferta.json': 'calcoloPergo_data_trasferta',
+        'prodotti.json':  'calcoloPergo_data_prodotti',
+      };
+      const key = keys[filename];
+      if (key) localStorage.removeItem(key);
+
+      return await response.json();
     } catch (e) {
-      return Promise.reject(e);
+      console.error(`Errore API (${filename}):`, e);
+      // Fallback su localStorage in caso di errore server (opzionale, ma utile se si lavora offline)
+      const keys = {
+        'costanti.json':  'calcoloPergo_data_costanti',
+        'trasferta.json': 'calcoloPergo_data_trasferta',
+        'prodotti.json':  'calcoloPergo_data_prodotti',
+      };
+      const key = keys[filename];
+      if (key) {
+        localStorage.setItem(key, JSON.stringify(data));
+        return { success: true, localOnly: true };
+      }
+      throw e;
     }
-    return Promise.resolve({ success: true });
   }
 
   function init() {
@@ -309,6 +379,11 @@
     if (btnAnnulla) btnAnnulla.addEventListener('click', chiudiModal);
     if (overlayParametri) overlayParametri.addEventListener('click', chiudiModal);
     if (btnSalva) btnSalva.addEventListener('click', salvaModifiche);
+
+    const btnAddScaglione = $('#btn-aggiungi-scaglione');
+    if (btnAddScaglione) {
+      btnAddScaglione.addEventListener('click', () => aggiungiRigaScaglione());
+    }
 
     $$('.modal-tab').forEach(tab => {
       tab.addEventListener('click', () => {

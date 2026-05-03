@@ -132,7 +132,6 @@
       const keyCapCam = `ACCESSORIO_CAP_CAMION_GRU_${codice}`;
 
       const codiceUpper = String(codice).toUpperCase();
-      const defaultCarico = ['ZAVORRE', 'PF', 'PANNELLI_COIBENTATI'].includes(codiceUpper) || (acc.soggetto_gestione_carico === true);
 
       if (codiceUpper.startsWith('ZAVORRA_')) {
         if (out[keyOre] == null && out['ORE_INSTALLAZIONE_ZAVORRE'] != null) {
@@ -140,11 +139,16 @@
         }
       }
 
+      const defaultCarico = (acc.soggetto_gestione_carico === true) || ['ZAVORRE', 'PF', 'PANNELLI_COIBENTATI'].includes(codiceUpper);
+
+      if (out[keyCarico] === undefined) {
+        out[keyCarico] = defaultCarico;
+      }
+      
       const defaultOre = typeof acc.ore_installazione_unita === 'number' ? acc.ore_installazione_unita : (typeof acc.ore_installazione === 'number' ? acc.ore_installazione : 0);
       if (out[keyOre] == null || Number.isNaN(Number(out[keyOre])) || out[keyOre] === 0) out[keyOre] = defaultOre;
       if (out[keyPeso] == null || Number.isNaN(Number(out[keyPeso])) || out[keyPeso] === 0) out[keyPeso] = acc.peso || 0;
       out[keyPers] = out[keyPers] === true;
-      out[keyCarico] = out[keyCarico] === true || out[keyPers] === true || defaultCarico;
       out[keyTipo] = String(out[keyTipo] || acc.tipo_calcolo || 'per_posto_auto').toLowerCase() === 'per_pz' ? 'per_pz' : 'per_posto_auto';
       
       const parsedBil = parseInt(out[keyCapBil], 10);
@@ -318,6 +322,36 @@
 
     popolaOrePosti();
     popolaAccessori();
+    popolaScontiProdotto();
+  }
+
+  function popolaScontiProdotto() {
+    const container = $('#container-sconti-prodotto');
+    if (!container) return;
+    container.innerHTML = '';
+    
+    const list = prodottoCorrente.SCONTO_ORE_SCAGLIONI || [];
+    list.forEach(s => aggiungiRigaScaglioneProdotto(s));
+  }
+
+  function aggiungiRigaScaglioneProdotto(data = { min: 1, max: 1, sconto_pct: 0 }) {
+    const container = $('#container-sconti-prodotto');
+    if (!container) return;
+
+    const row = document.createElement('div');
+    row.className = 'sconti-scaglione-item';
+    row.innerHTML = `
+        <input type="number" class="scaglione-min" value="${data.min}" min="1" step="1">
+        <input type="number" class="scaglione-max" value="${data.max}" min="1" step="1">
+        <input type="number" class="scaglione-pct" value="${data.sconto_pct}" min="0" step="0.1">
+        <button type="button" class="btn-rimuovi-scaglione" title="Rimuovi fascia">✕</button>
+    `;
+
+    row.querySelector('.btn-rimuovi-scaglione').addEventListener('click', () => {
+      row.remove();
+    });
+
+    container.appendChild(row);
   }
 
   function popolaOrePosti() {
@@ -433,10 +467,22 @@
       chkWrap.className = 'accessorio-check';
       const chk = document.createElement('input');
       chk.type = 'checkbox';
-      chk.id = `acc-consegna-${codice}`;
-      chk.checked = prodottoCorrente[`ACCESSORIO_GESTIONE_CARICO_${codice}`] === true || prodottoCorrente[`CONSEGNA_PERSONALIZZATA_${codice}`] === true;
+      chk.id = `acc-carico-${codice}`;
+      // Usiamo esplicitamente la chiave di gestione carico
+      chk.checked = prodottoCorrente[`ACCESSORIO_GESTIONE_CARICO_${codice}`] !== false;
+      
+      const spanCarico = document.createElement('span');
+      spanCarico.style.fontWeight = '700';
+      spanCarico.style.color = chk.checked ? 'var(--primary)' : '#999';
+      spanCarico.textContent = ' Gestione del carico ABILITATA';
+      
+      chk.addEventListener('change', () => {
+        spanCarico.textContent = chk.checked ? ' Gestione del carico ABILITATA' : ' Gestione del carico DISABILITATA';
+        spanCarico.style.color = chk.checked ? 'var(--primary)' : '#999';
+      });
+
       chkWrap.appendChild(chk);
-      chkWrap.appendChild(document.createTextNode(' Soggetto a gestione del carico'));
+      chkWrap.appendChild(spanCarico);
 
       const tipoWrap = document.createElement('div');
       tipoWrap.className = 'accessorio-extra-row';
@@ -565,7 +611,7 @@
       if (!codice) return;
       const input = $(`#acc-${codice}`);
       const inputPeso = $(`#acc-peso-${codice}`);
-      const chkPers = $(`#acc-consegna-${codice}`);
+      const chkCarico = $(`#acc-carico-${codice}`);
       const tipoSel = $(`#acc-tipo-${codice}`);
       const capBil = $(`#acc-cap-bil-${codice}`);
       const capNostro = $(`#acc-cap-nostro-${codice}`);
@@ -575,13 +621,25 @@
         prodottoCorrente[fieldName] = parseFloat(input.value) || 0;
       }
       prodottoCorrente[`PESO_ACCESSORIO_${codice}`] = inputPeso ? (parseFloat(inputPeso.value) || 0) : 0;
-      prodottoCorrente[`ACCESSORIO_GESTIONE_CARICO_${codice}`] = chkPers?.checked === true;
-      prodottoCorrente[`CONSEGNA_PERSONALIZZATA_${codice}`] = chkPers?.checked === true;
+      prodottoCorrente[`ACCESSORIO_GESTIONE_CARICO_${codice}`] = chkCarico?.checked === true;
+      prodottoCorrente[`CONSEGNA_PERSONALIZZATA_${codice}`] = chkCarico?.checked === true;
       prodottoCorrente[`ACCESSORIO_TIPO_CALCOLO_${codice}`] = tipoSel?.value === 'per_pz' ? 'per_pz' : 'per_posto_auto';
       prodottoCorrente[`ACCESSORIO_CAP_BILICO_${codice}`] = capBil ? (parseInt(capBil.value, 10) || 0) : 0;
       prodottoCorrente[`ACCESSORIO_CAP_NOSTRO_MEZZO_${codice}`] = capNostro ? (parseInt(capNostro.value, 10) || 0) : 0;
       prodottoCorrente[`ACCESSORIO_CAP_CAMION_GRU_${codice}`] = capCam ? (parseInt(capCam.value, 10) || 0) : 0;
     });
+
+    // Raccogli sconti prodotto
+    const scontiRows = $$('.sconti-scaglione-item', $('#container-sconti-prodotto'));
+    if (scontiRows.length > 0) {
+      prodottoCorrente.SCONTO_ORE_SCAGLIONI = scontiRows.map(row => ({
+        min: parseInt($('.scaglione-min', row).value, 10) || 1,
+        max: parseInt($('.scaglione-max', row).value, 10) || 1,
+        sconto_pct: parseFloat($('.scaglione-pct', row).value) || 0
+      })).sort((a, b) => a.min - b.min);
+    } else {
+      delete prodottoCorrente.SCONTO_ORE_SCAGLIONI;
+    }
 
     prodotti[prodottoCorrenteIndex] = normalizzaProdotto(prodottoCorrente);
     
@@ -614,11 +672,25 @@
     }
 
     try {
-      localStorage.setItem('calcoloPergo_data_prodotti', JSON.stringify(prodotti, null, 2));
-      alert('✅ Tutti i prodotti sono stati salvati con successo!');
+      const response = await fetch('/api/salva/prodotti.json', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(prodotti),
+      });
+
+      if (!response.ok) {
+        throw new Error('Errore durante il salvataggio sul server');
+      }
+
+      // Rimuoviamo dalla localStorage per usare il file aggiornato
+      localStorage.removeItem('calcoloPergo_data_prodotti');
+
+      alert('✅ Tutti i prodotti sono stati salvati con successo sul file JSON!');
     } catch (error) {
       console.error('Errore:', error);
-      alert('❌ Errore durante il salvataggio. Verifica la console per dettagli.');
+      // Fallback
+      localStorage.setItem('calcoloPergo_data_prodotti', JSON.stringify(prodotti));
+      alert('⚠️ Salvato solo localmente (browser). Il server non ha risposto.');
     } finally {
       if (btnSalva) {
         btnSalva.disabled = false;
@@ -647,6 +719,14 @@
     if (btnAggiungiProdotto) btnAggiungiProdotto.addEventListener('click', aggiungiProdotto);
     if (btnEliminaProdotto) btnEliminaProdotto.addEventListener('click', () => eliminaProdotto(prodottoCorrenteIndex));
     if (btnGeneraOrePosti) btnGeneraOrePosti.addEventListener('click', generaElencoOrePosti);
+
+    $('#btn-aggiungi-scaglione-prodotto')?.addEventListener('click', () => aggiungiRigaScaglioneProdotto());
+    $('#btn-reset-sconti-prodotto')?.addEventListener('click', () => {
+      if (confirm('Rimuovere gli sconti personalizzati e usare quelli globali?')) {
+        const container = $('#container-sconti-prodotto');
+        if (container) container.innerHTML = '';
+      }
+    });
 
     if (searchInput) {
       searchInput.addEventListener('input', () => {

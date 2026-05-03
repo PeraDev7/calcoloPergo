@@ -860,6 +860,16 @@ body {
   border-bottom: none;
 }
 
+.riep-card-footer {
+  margin-top: 0.4rem;
+  padding-top: 0.5rem !important;
+  border-top: 1px solid rgba(0,0,0,0.1) !important;
+  border-bottom: none !important;
+  font-weight: 700;
+  color: var(--primary) !important;
+  font-size: 0.82rem;
+}
+
 .riep-card-lista li strong {
   font-variant-numeric: tabular-nums;
   font-weight: 700;
@@ -1965,3 +1975,163 @@ body {
 
 .esporta-pdf-rigacheck { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; gap: 1rem; }
 .btn-copia-crm { padding: 0.4rem 0.8rem; font-size: 0.85rem; white-space: nowrap; }
+
+/* --- Sconti --- */
+.sconti-header-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 40px;
+    gap: 10px;
+    padding: 10px;
+    background: #f8f9fa;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-bottom: 10px;
+}
+
+.sconti-scaglione-item {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 40px;
+    gap: 10px;
+    margin-bottom: 8px;
+    align-items: center;
+}
+
+.sconti-scaglione-item input {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 0.95rem;
+}
+
+.btn-rimuovi-scaglione {
+    background: none;
+    border: none;
+    color: #dc3545;
+    font-size: 1.2rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s;
+}
+
+.btn-rimuovi-scaglione:hover {
+    color: #a71d2a;
+}
+
+.btn-small {
+    padding: 6px 12px;
+    font-size: 0.85rem;
+}
+
+/* --- Sezione Dettaglio Calcoli (Accordion) --- */
+.accordion-dettaglio {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: #fff;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    margin-top: 1rem;
+}
+
+.accordion-dettaglio[open] {
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+}
+
+.accordion-summary {
+    list-style: none;
+    padding: 1rem 1.25rem;
+    cursor: pointer;
+    font-weight: 700;
+    color: var(--primary);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #f8faf6;
+    user-select: none;
+}
+
+.accordion-summary::-webkit-details-marker {
+    display: none;
+}
+
+.accordion-summary:hover {
+    background: #f0f5eb;
+}
+
+.accordion-icon {
+    font-size: 0.8rem;
+    transition: transform 0.3s ease;
+    opacity: 0.6;
+}
+
+.accordion-dettaglio[open] .accordion-icon {
+    transform: rotate(180deg);
+}
+
+.accordion-content {
+    padding: 1.25rem;
+    border-top: 1px solid var(--border);
+    font-size: 0.9rem;
+    line-height: 1.6;
+}
+
+.dettaglio-vuoto {
+    color: var(--secondary);
+    font-style: italic;
+    text-align: center;
+    padding: 1rem;
+}
+
+.dettaglio-sezione {
+    margin-bottom: 1.5rem;
+}
+
+.dettaglio-sezione:last-child {
+    margin-bottom: 0;
+}
+
+.dettaglio-sezione-titolo {
+    font-weight: 800;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--secondary);
+    margin-bottom: 0.75rem;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 0.25rem;
+}
+
+.dettaglio-riga {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.4rem;
+    gap: 1rem;
+}
+
+.dettaglio-riga span:first-child {
+    color: #555;
+    flex: 1;
+}
+
+.dettaglio-riga span:last-child {
+    font-weight: 600;
+    color: var(--text);
+    text-align: right;
+}
+
+.dettaglio-evidenziato {
+    background: #fff9e6;
+    padding: 2px 4px;
+    border-radius: 4px;
+    font-weight: 700;
+}
+
+.dettaglio-nota {
+    font-size: 0.8rem;
+    color: #777;
+    margin-top: 0.25rem;
+    font-style: italic;
+}

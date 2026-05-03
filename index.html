@@ -86,7 +86,6 @@
                             <div class="trasporto-merci-radios" role="radiogroup" aria-label="Modalità trasporto struttura">
                                 <label class="trasporto-merci-radio-label"><input type="radio" name="trasporto_modalita_merci" value="nostro_mezzo" checked> Nostro mezzo</label>
                                 <label class="trasporto-merci-radio-label"><input type="radio" name="trasporto_modalita_merci" value="bilico"> Bilico</label>
-                                <label class="trasporto-merci-radio-label"><input type="radio" name="trasporto_modalita_merci" value="camion_gru"> Mezzo con gru (trasporto)</label>
                             </div>
                             <div class="domanda domanda-computed">
                                 <label>Stima costo trasporto struttura</label>
@@ -299,12 +298,38 @@
                             </div>
                         </div>
 
-                        <!-- Servizio gru -->
+                        <!-- Servizio gru (mezzo con gru) -->
+                        <div class="noleggio-item">
+                            <label class="noleggio-toggle-label" for="toggle-camion-gru">
+                                <input type="checkbox" class="noleggio-toggle" id="toggle-camion-gru" name="attivo_camion_gru">
+                                <span class="toggle-switch" aria-hidden="true"></span>
+                                <span class="noleggio-toggle-testo">Mezzo con gru (scarico/posa)</span>
+                            </label>
+                            <div class="noleggio-dettagli" id="dettagli-camion-gru" hidden>
+                                <div class="noleggio-controlli">
+                                    <div class="controlli-giorni">
+                                        <label class="controlli-label">Giorni</label>
+                                        <div class="controlli-buttons">
+                                            <button type="button" class="btn-controllo btn-meno" data-target="input-giorni-camion-gru">−</button>
+                                            <input type="number" id="input-giorni-camion-gru" name="giorni_camion_gru" min="1" max="365" value="1" readonly>
+                                            <button type="button" class="btn-controllo btn-piu" data-target="input-giorni-camion-gru">+</button>
+                                        </div>
+                                    </div>
+                                    <div class="controlli-costo">
+                                        <label class="controlli-label">Costo</label>
+                                        <p id="valore-costo-camion-gru" class="valore-costo" aria-live="polite">—</p>
+                                    </div>
+                                </div>
+                                <span class="hint" id="hint-camion-gru-costi">Costi configurabili in Parametri e costi</span>
+                            </div>
+                        </div>
+
+                        <!-- Servizio gru (esterna/noleggio) -->
                         <div class="noleggio-item">
                             <label class="noleggio-toggle-label" for="toggle-gru">
                                 <input type="checkbox" class="noleggio-toggle" id="toggle-gru" name="attivo_gru">
                                 <span class="toggle-switch" aria-hidden="true"></span>
-                                <span class="noleggio-toggle-testo">Servizio gru in cantiere</span>
+                                <span class="noleggio-toggle-testo">Servizio gru esterna</span>
                             </label>
                             <div class="noleggio-dettagli" id="dettagli-gru" hidden>
                                 <div class="noleggio-controlli">
@@ -321,7 +346,7 @@
                                         <p id="valore-gru-trasporto" class="valore-costo" aria-live="polite">—</p>
                                     </div>
                                 </div>
-                                <span class="hint">Valori configurabili in Parametri e costi (distinto dal «Mezzo con gru» per trasporto)</span>
+                                <span class="hint" id="hint-gru-costi">Valori configurabili in Parametri e costi</span>
                             </div>
                         </div>
 
@@ -349,6 +374,7 @@
                                 <ul class="riep-card-lista">
                                     <li>Manodopera stimata: <strong id="riep-manodopera">—</strong></li>
                                     <li>Servizi personalizzati: <strong id="riep-servizi-pers">—</strong></li>
+                                    <li class="riep-card-footer">Per posto auto: <strong id="riep-manodopera-posto">—</strong></li>
                                 </ul>
                             </div>
 
@@ -359,6 +385,7 @@
                                 </div>
                                 <ul class="riep-card-lista">
                                     <li>Costo trasporto: <strong id="riep-trasporto-merci">—</strong></li>
+                                    <li class="riep-card-footer">Per posto auto: <strong id="riep-trasporto-posto">—</strong></li>
                                 </ul>
                             </div>
 
@@ -370,7 +397,9 @@
                                 <ul class="riep-card-lista">
                                     <li>Noleggio muletto: <strong id="riep-muletto">—</strong></li>
                                     <li>Noleggio scala: <strong id="riep-scala">—</strong></li>
-                                    <li>Servizio gru in cantiere: <strong id="riep-gru-servizio">—</strong></li>
+                                    <li>Mezzo con gru: <strong id="riep-camion-gru">—</strong></li>
+                                    <li>Gru esterna: <strong id="riep-gru-servizio">—</strong></li>
+                                    <li class="riep-card-footer">Per posto auto: <strong id="riep-noleggi-posto">—</strong></li>
                                 </ul>
                             </div>
 
@@ -407,6 +436,21 @@
                                 <button type="button" id="btn-esporta-pdf" class="btn btn-secondary btn-esporta-pdf">
                                     📄 Esporta report PDF
                                 </button>
+                            </div>
+
+                            <!-- Sezione Scopri tutti i calcoli -->
+                            <div class="sezione-dettaglio-calcoli" style="margin-top: 1.5rem; border-top: 1px solid var(--border); padding-top: 1.5rem;">
+                                <details class="accordion-dettaglio">
+                                    <summary class="accordion-summary">
+                                        <span>🔍 Scopri tutti i calcoli</span>
+                                        <span class="accordion-icon">▼</span>
+                                    </summary>
+                                    <div id="dettaglio-calcoli-content" class="accordion-content">
+                                        <div class="dettaglio-vuoto">
+                                            Esegui un calcolo completo per visualizzare il dettaglio tecnico dei passaggi, delle ore e dei costi.
+                                        </div>
+                                    </div>
+                                </details>
                             </div>
                         </div>
                     </div>
@@ -457,6 +501,7 @@
             <div class="modal-tabs">
                 <button type="button" class="modal-tab active" data-tab="costanti">Costanti</button>
                 <button type="button" class="modal-tab" data-tab="trasferta">Trasferta</button>
+                <button type="button" class="modal-tab" data-tab="sconti">Sconti</button>
             </div>
 
             <div class="modal-body">
@@ -503,7 +548,19 @@
                     </div>
 
                     <div class="parametri-group">
-                        <h3 class="parametri-group-titolo">Servizio Gru in cantiere</h3>
+                        <h3 class="parametri-group-titolo">Mezzo con gru (scarico/posa)</h3>
+                        <div class="domanda">
+                            <label for="param-camion-gru-primo">€ primo giorno</label>
+                            <input type="number" id="param-camion-gru-primo" min="0" step="1">
+                        </div>
+                        <div class="domanda">
+                            <label for="param-camion-gru-giorno">€ per giorno aggiuntivo</label>
+                            <input type="number" id="param-camion-gru-giorno" min="0" step="1">
+                        </div>
+                    </div>
+
+                    <div class="parametri-group">
+                        <h3 class="parametri-group-titolo">Gru esterna / Noleggio</h3>
                         <div class="domanda">
                             <label for="param-gru-primo">€ primo giorno</label>
                             <input type="number" id="param-gru-primo" min="0" step="1">
@@ -516,7 +573,7 @@
 
                     <div class="parametri-group">
                         <h3 class="parametri-group-titolo">Trasporto struttura (€/km)</h3>
-                        <p class="hint">Nostro mezzo: tariffa = base + pedaggio + carburante + usura (tutti €/km). Bilico e camion gru: tariffa unica. Il costo totale = viaggi × (km A/R per viaggio) × tariffa.</p>
+                        <p class="hint">Nostro mezzo: tariffa = base + pedaggio + carburante + usura (tutti €/km). Bilico: tariffa unica. Il costo totale = viaggi × (km A/R per viaggio) × tariffa.</p>
                         <div class="domanda">
                             <label for="param-trm-base">Nostro mezzo — base €/km</label>
                             <input type="number" id="param-trm-base" min="0" step="0.01" value="0.05">
@@ -536,10 +593,6 @@
                         <div class="domanda">
                             <label for="param-trm-bilico">Bilico €/km</label>
                             <input type="number" id="param-trm-bilico" min="0" step="0.01" value="2.2">
-                        </div>
-                        <div class="domanda">
-                            <label for="param-trm-camion-gru">Mezzo con gru (trasporto) €/km</label>
-                            <input type="number" id="param-trm-camion-gru" min="0" step="0.01" value="2">
                         </div>
                     </div>
 
@@ -704,6 +757,27 @@
                             <label for="param-trf-hotel">€ / notte (stima)</label>
                             <input type="number" id="param-trf-hotel" min="0" step="1">
                         </div>
+                    </div>
+                </div>
+
+                <!-- Tab Sconti (scaglioni sconto ore) -->
+                <div class="tab-content" data-tab-content="sconti">
+                    <div class="parametri-group">
+                        <h3 class="parametri-group-titolo">Fasce Sconto Ore Installazione</h3>
+                        <p class="hint">Definisci la percentuale di sconto sulle ore di installazione in base al numero di posti auto. Queste fasce vengono applicate automaticamente se il prodotto non ha sconti personalizzati.</p>
+                        
+                        <div class="sconti-header-row">
+                            <span>Min Posti</span>
+                            <span>Max Posti</span>
+                            <span>Sconto (%)</span>
+                            <span></span>
+                        </div>
+                        <div id="container-sconti-scaglioni" class="sconti-scaglioni-lista">
+                            <!-- Inserito da JS -->
+                        </div>
+                        <button type="button" id="btn-aggiungi-scaglione" class="btn btn-secondary btn-small" style="margin-top: 10px;">
+                            + Aggiungi fascia
+                        </button>
                     </div>
                 </div>
             </div>
